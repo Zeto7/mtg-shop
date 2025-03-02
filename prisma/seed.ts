@@ -2,7 +2,6 @@ import { Prisma } from "@prisma/client";
 import { additionals, categories, products } from "./constants";
 import { prisma } from "./prisma-client";
 import { hashSync } from "bcrypt";
-import { connect } from "http2";
 
 const randomDecimalNumber = (min: number, max: number) => {
     return Math.floor(Math.random() * (max - min) * 10 + min * 10) / 10;
@@ -11,7 +10,7 @@ const randomDecimalNumber = (min: number, max: number) => {
 const generateProductItem = ({ productId, amount, }: { productId: number; amount?: 1 | 2 | 3 }) => {
     return {
       productId,
-      price: randomDecimalNumber(190, 600),
+      price: randomDecimalNumber(15, 100),
       amount,
     } as Prisma.ProductItemUncheckedCreateInput;
   };
@@ -50,9 +49,9 @@ async function up() {
 
     const item1 = await prisma.product.create({
         data: {
-            name: 'Тест дуо набор1',
+            name: 'Дуэльный набор Final Fantasy',
             imageUrl:
-              "https://hobbygames.by/image/cache/hobbygames/data/Wizarsds_Of_the_Coast/Magic_the_Gathering/Wilds_of_Eldraine/Starter_Kit/starter-kit-01-1000x416-wm.JPG",
+              "https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/Final-Fantasy-Einsteigerpaket-englisch_195166271170.png",
             categoryId: 1,
             Additionals: {
               connect: additionals.slice(0, 5),
@@ -62,9 +61,9 @@ async function up() {
 
     const item2 = await prisma.product.create({
         data: {
-            name: 'Тест дуо набор2',
+            name: 'Дуэльный набор 2023',
             imageUrl:
-              "https://hobbygames.by/image/cache/hobbygames/data/Wizarsds_Of_the_Coast/Magic_the_Gathering/Wilds_of_Eldraine/Starter_Kit/starter-kit-01-1000x416-wm.JPG",
+              "https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/magic_the_gathering_einsteigerpaket_2023_starter_kit_englisch_english_guenstig_billig_kaufen_tcg_mtg.png",
             categoryId: 1,
             Additionals: {
               connect: additionals.slice(0, 5),
@@ -74,9 +73,9 @@ async function up() {
 
     const item3 = await prisma.product.create({
         data: {
-            name: 'Тест дуо набор3',
+            name: 'Дуэльный набор Universes Beyond: Assassins Creed ',
             imageUrl:
-              "https://hobbygames.by/image/cache/hobbygames/data/Wizarsds_Of_the_Coast/Magic_the_Gathering/Wilds_of_Eldraine/Starter_Kit/starter-kit-01-1000x416-wm.JPG",
+              "https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/assassins_creed_einsteiger_paket_starter_kit_englisch_english_guenstig_billig_kaufen_tcg_mtg_acr.png",
             categoryId: 1,
             Additionals: {
               connect: additionals.slice(0, 5),

@@ -7,7 +7,6 @@ interface PriceProps {
     priceTo?: number;
 }
 
-
 interface QueryFilters extends PriceProps{
     kitTypes: string;
     amount: string;
@@ -29,6 +28,7 @@ interface ReturnProps extends Filters {
 }
 
 export const useFilters = (): ReturnProps => {
+    
     const searchParams = useSearchParams() as unknown as Map<keyof QueryFilters, string>;
 
     // Фильтр коллекции

@@ -7,7 +7,9 @@ export const useAdditionals = () => {
     const [loading, setLoading] = React.useState(true);
 
     React.useEffect(() => {
+    
         async function fetchAdditionals() {
+            
             try{
                 setLoading(true);
                 const additionals = await Api.additionals.getAll();
@@ -22,7 +24,7 @@ export const useAdditionals = () => {
         }
 
         fetchAdditionals();
-    }, []);
+    }, [])
 
     return {additionals, loading};
 }
