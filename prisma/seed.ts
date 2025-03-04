@@ -53,6 +53,7 @@ async function up() {
             imageUrl:
               "https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/Final-Fantasy-Einsteigerpaket-englisch_195166271170.png",
             categoryId: 1,
+            price: 120,
             Additionals: {
               connect: additionals.slice(0, 5),
             },
@@ -65,6 +66,7 @@ async function up() {
             imageUrl:
               "https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/magic_the_gathering_einsteigerpaket_2023_starter_kit_englisch_english_guenstig_billig_kaufen_tcg_mtg.png",
             categoryId: 1,
+            price: 91,
             Additionals: {
               connect: additionals.slice(0, 5),
             },
@@ -77,6 +79,33 @@ async function up() {
             imageUrl:
               "https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/assassins_creed_einsteiger_paket_starter_kit_englisch_english_guenstig_billig_kaufen_tcg_mtg_acr.png",
             categoryId: 1,
+            price: 86,
+            Additionals: {
+              connect: additionals.slice(0, 5),
+            },
+          },
+    });
+
+    const item4 = await prisma.product.create({
+        data: {
+            name: 'Дуэльный набор Bloomburrow',
+            imageUrl:
+              "https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/bloomburrow_starter_kit_englisch_english_guenstig_billig_kaufen_tcg_mtg_blb.png",
+            categoryId: 1,
+            price: 65,
+            Additionals: {
+              connect: additionals.slice(0, 5),
+            },
+          },
+    });
+
+    const item5 = await prisma.product.create({
+        data: {
+            name: 'Дуэльный набор The Lord of the Rings: Tales of Middle-Earth',
+            imageUrl:
+              "https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/the_lord_of_the_rings_tales_of_middle-earth_starter_kit_englisch_english_guenstig_billig_kaufen_ltr_tcg_mtg_2.png",
+            categoryId: 1,
+            price: 71,
             Additionals: {
               connect: additionals.slice(0, 5),
             },
