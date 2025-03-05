@@ -4,7 +4,7 @@ import React from "react";
 interface Props {
     className?: string;
     imageUrl: string;
-    amount: number;
+    amount: 1 | 2 | 3;
 }
 
 export const ProductImage: React.FC<Props> = ({ className, imageUrl, amount }: Props) => {
@@ -12,9 +12,9 @@ export const ProductImage: React.FC<Props> = ({ className, imageUrl, amount }: P
         <div className={cn('flex items-center justify-center flex-1 relative w-full', className)}>
             <img src={imageUrl} alt="Logo" 
                 className={cn('relative left-2 top-2 transition-all z-10 duration-300', {
-                    'w-[300px] h-[300px]': amount === 1,
-                    'w-[301px] h-[300px]': amount === 2,
-                    'w-[300px] h-[301px]': amount === 3,
+                    '': amount === 1,
+                    '': amount === 2,
+                    '': amount === 3,
                 })}
             />
 
