@@ -1,8 +1,8 @@
-import { Container } from "@/components/shared/container";
-import { Filters } from "@/components/shared/filters";
-import { ProductsGroupList } from "@/components/shared/products-group-list";
-import { Title } from "@/components/shared/title";
-import { TopBar } from "@/components/shared/top-bar";
+import { Container } from "@/shared/components/shared/container";
+import { Filters } from "@/shared/components/shared/filters";
+import { ProductsGroupList } from "@/shared/components/shared/products-group-list";
+import { Title } from "@/shared/components/shared/title";
+import { TopBar } from "@/shared/components/shared/top-bar";
 import { prisma } from "@/prisma/prisma-client";
 
 
