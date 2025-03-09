@@ -1,6 +1,6 @@
 'use client';
 
-import { Dialog, DialogContent } from "@/shared/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/shared/components/ui/dialog";
 import { cn } from "@/shared/lib/utils";
 import React from "react";
 import { useRouter } from "next/navigation";
@@ -15,12 +15,14 @@ interface Prors {
 
 export const ChooseProductModals: React.FC<Prors> = ({ className, product }) => {
     const router = useRouter();
-    const isKitForm = Boolean(product.items[0])
+    const isKitForm = Boolean(product.items[0].amount)
 
     return (
         <Dialog open={Boolean(product)} onOpenChange={() => router.back()}>
-            <DialogContent className={cn("p-0 w-[1160px] max-w-[1160px] min-h-[700px] bg-white overflow-hidden", className)}>
-                { isKitForm ? ( <ChooseKitForm imageUrl={product.imageUrl} name={product.name} additionals={[]} items={[]}/> ) : 
+            <DialogContent className={cn("p-0 w-[1160px]` max-w-[1160px] min-h-[700px] bg-white overflow-hidden", className)}>
+                <DialogTitle className="hidden"/>
+                { isKitForm ? 
+                    ( <ChooseKitForm imageUrl={product.imageUrl} name={product.name} additionals={product.additionals} items={product.items}/> ) : 
                     ( <ChooseProductForm imageUrl={product.imageUrl} name={product.name} items={[]}/> )
                 }
             </DialogContent>

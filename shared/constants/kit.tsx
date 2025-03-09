@@ -4,4 +4,6 @@ export const mapAmount = {
     3: '3x',
 } as const;
 
-export const kitAmount = Object.entries(mapAmount).map(([name, value]) => ({name, value}));
+export const kitAmount = Object.entries(mapAmount).map(([value , name ]) => ({name, value}));
+
+export type KitAmount = keyof typeof kitAmount;    

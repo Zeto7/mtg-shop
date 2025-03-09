@@ -1,11 +1,6 @@
-import { Container } from "@/shared/components/shared/container";
-import { prisma } from "@/prisma/prisma-client"
-import { notFound } from "next/navigation";
-import { ProductImage } from "@/shared/components/shared/Product-Imange";
-import { Title } from "@/shared/components/shared/title";
-import { GroupVariants } from "@/shared/components/shared/group-variants";
+import { prisma } from "@/prisma/prisma-client";
 import { ChooseProductModals } from "@/shared/components/shared/modals/choose-product-modals";
-
+import { notFound } from "next/navigation";
 
 export default async function ProductModalPage({params: {id}}: {params: {id: string}}) {
     const product = await prisma.product.findFirst({ where: { id: Number(id), }, include: { Additionals: true, items: true, },});
@@ -14,6 +9,12 @@ export default async function ProductModalPage({params: {id}}: {params: {id: str
         return notFound();
     }
 
-    return <ChooseProductModals product={product}/>
+    
+    const mappedProduct = {
+        ...product,
+        additionals: product.Additionals,
+    };
+
+    return <ChooseProductModals product={mappedProduct}/>
 
 }

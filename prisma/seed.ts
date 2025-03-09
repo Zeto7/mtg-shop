@@ -55,7 +55,7 @@ async function up() {
             categoryId: 1,
             price: 120,
             Additionals: {
-              connect: additionals.slice(0, 5),
+              connect: additionals.slice(0, 11),
             },
           },
     });
@@ -68,7 +68,7 @@ async function up() {
             categoryId: 1,
             price: 91,
             Additionals: {
-              connect: additionals.slice(0, 5),
+              connect: additionals.slice(0, 11),
             },
           },
     });
@@ -81,7 +81,7 @@ async function up() {
             categoryId: 1,
             price: 86,
             Additionals: {
-              connect: additionals.slice(0, 5),
+              connect: additionals.slice(0, 11),
             },
           },
     });
@@ -94,7 +94,7 @@ async function up() {
             categoryId: 1,
             price: 65,
             Additionals: {
-              connect: additionals.slice(0, 5),
+              connect: additionals.slice(0, 11),
             },
           },
     });
@@ -107,7 +107,7 @@ async function up() {
             categoryId: 1,
             price: 71,
             Additionals: {
-              connect: additionals.slice(0, 5),
+              connect: additionals.slice(0, 11),
             },
           },
     });
@@ -127,22 +127,17 @@ async function up() {
             generateProductItem({ productId: item3.id, amount: 1 }),
 
             // // Остальное
-            // generateProductItem({ productId: 1 }),
-            // generateProductItem({ productId: 2 }),
-            // generateProductItem({ productId: 3 }),
-            // generateProductItem({ productId: 4 }),
-            // generateProductItem({ productId: 5 }),
-            // generateProductItem({ productId: 6 }),
-            // generateProductItem({ productId: 7 }),
-            // generateProductItem({ productId: 8 }),
-            // generateProductItem({ productId: 9 }),
-            // generateProductItem({ productId: 10 }),
-            // generateProductItem({ productId: 11 }),
-            // generateProductItem({ productId: 12 }),
-            // generateProductItem({ productId: 13 }),
-            // generateProductItem({ productId: 14 }),
-            // generateProductItem({ productId: 15 }),
-            // generateProductItem({ productId: 16 }),            
+            generateProductItem({ productId: 1 }),
+            generateProductItem({ productId: 2 }),
+            generateProductItem({ productId: 3 }),
+            generateProductItem({ productId: 4 }),
+            generateProductItem({ productId: 5 }),
+            generateProductItem({ productId: 6 }),
+            generateProductItem({ productId: 7 }),
+            generateProductItem({ productId: 8 }),
+            generateProductItem({ productId: 9 }),
+            generateProductItem({ productId: 10 }),
+            generateProductItem({ productId: 11 }),           
         ],
     })
 
