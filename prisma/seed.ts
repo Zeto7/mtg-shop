@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { additionals, categories, products } from "./constants";
+import { _additionals, categories, products } from "./constants";
 import { prisma } from "./prisma-client";
 import { hashSync } from "bcrypt";
 
@@ -40,7 +40,7 @@ async function up() {
     });
 
     await prisma.additional.createMany({
-        data: additionals,
+        data: _additionals,
     });
 
     await prisma.product.createMany({
@@ -55,7 +55,7 @@ async function up() {
             categoryId: 1,
             price: 120,
             Additionals: {
-              connect: additionals.slice(0, 11),
+              connect: _additionals.slice(0, 11),
             },
           },
     });
@@ -68,7 +68,7 @@ async function up() {
             categoryId: 1,
             price: 91,
             Additionals: {
-              connect: additionals.slice(0, 11),
+              connect: _additionals.slice(0, 11),
             },
           },
     });
@@ -81,7 +81,7 @@ async function up() {
             categoryId: 1,
             price: 86,
             Additionals: {
-              connect: additionals.slice(0, 11),
+              connect: _additionals.slice(0, 11),
             },
           },
     });
@@ -94,7 +94,7 @@ async function up() {
             categoryId: 1,
             price: 65,
             Additionals: {
-              connect: additionals.slice(0, 11),
+              connect: _additionals.slice(0, 11),
             },
           },
     });
@@ -107,7 +107,7 @@ async function up() {
             categoryId: 1,
             price: 71,
             Additionals: {
-              connect: additionals.slice(0, 11),
+              connect: _additionals.slice(0, 11),
             },
           },
     });

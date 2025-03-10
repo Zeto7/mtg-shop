@@ -26,12 +26,12 @@ export const Header: React.FC<Props> = ({ classname }) => {
                     </div>
                 </Link>
 
-                <div className="mx-10 flex-1">
+                <div className="mx-10 flex-1 rounded-3xl">
                     <SearchInput/>
                 </div>
 
-                <div className='flex items-center gap-3 '>
-                    <Button variant={"outline"} className='flex items-center gap-1 rounded-xl'> 
+                <div className='flex items-center gap-3 rounded-3xl'>
+                    <Button variant={"outline"} className='flex items-center gap-1 rounded-3xl'> 
                         <User size={16} /> Войти 
                     </Button>
 

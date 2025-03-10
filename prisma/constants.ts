@@ -19,7 +19,7 @@ export const categories = [
     },
 ]
 
-export const additionals = [
+export const _additionals = [
     {
         name: 'Streets of New Capenna',
         price: 14,

@@ -61,7 +61,7 @@ export const ChooseKitForm: React.FC<Props> = ({ className, imageUrl, name, addi
             <p className="text-[#5C6370]">{textDetails}</p>
             <GroupVariants className=" gap-4 mt-3" items={availablekitsCount} value={String(amount)} onClick={value => setAmount(Number(value))}/>
             <p className="text-[#5C6370] mt-6">Дополнительный бустер</p>
-              <div className="bg-gray-100 mt-2 p-5 rounded-md h-[430px] overflow-auto scrollbar">
+              <div className="bg-[gray-100] mt-2 p-5 rounded-md h-[430px] overflow-auto scrollbar">
                 <div className='grid grid-cols-3 gap-3'>
                   {additionals.map((additional) => (
                     <AdditionalItem key={additional.id} imageUrl={additional.imageUrl} name={additional.name} price={additional.price} 
@@ -71,7 +71,7 @@ export const ChooseKitForm: React.FC<Props> = ({ className, imageUrl, name, addi
                   ))}
                 </div>
               </div>
-            <Button onClick={handleClickAdd} className="h-[55px] px-10 text-base rounded-[18px] w-full mt-10">Добавить в корзину за {totalPrice} Br</Button>
+            <Button onClick={handleClickAdd} className="h-[55px] px-10 text-base rounded-3xl w-full mt-10 bg-[#B22222]">Добавить в корзину за {totalPrice} Br</Button>
         </div>
     </div>
   )
