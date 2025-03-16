@@ -2,10 +2,11 @@ import React from "react"
 import { cn } from "@/shared/lib/utils"
 import { KitAmount } from "../constants/kit"
 import { Additional } from "@prisma/client"
+import { CartStateItem } from "./get-cart-details"
 
 
 
-export const getCartItemDetails = ( kitAmount: KitAmount[], additionals: Additional[] ): string => {
+export const getCartItemDetails = (additionals: CartStateItem['additionals'] | null, kitAmount?: KitAmount[] | null ): string => {
     const details = [];
 
     if (kitAmount) {

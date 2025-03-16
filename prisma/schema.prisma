@@ -75,16 +75,15 @@ model ProductItem {
 }
 
 model Cart {
-    id          Int      @id @default(autoincrement())
+    id          Int        @id @default(autoincrement())
     token       String
-    totalAmount Int      @default(0)
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+    totalAmount Int        @default(0)
+    items       CartItem[]
+    createdAt   DateTime   @default(now())
+    updatedAt   DateTime   @updatedAt
+    userId      Int?       @unique
 
-    userId Int? @unique
-
-    user  User?      @relation(fields: [userId], references: [id])
-    items CartItem[]
+    user User? @relation(fields: [userId], references: [id])
 }
 
 model CartItem {
