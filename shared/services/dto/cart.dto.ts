@@ -8,5 +8,5 @@ export type CartItemDTO = CartItem & {
 };
 
 export interface CartDTO extends Cart {
-    items: CartItemDTO[]; 
+    items: CartItemDTO[];
 }

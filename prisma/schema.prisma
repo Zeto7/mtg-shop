@@ -97,7 +97,7 @@ model CartItem {
 
     productItem ProductItem  @relation(fields: [productItemId], references: [id])
     cart        Cart         @relation(fields: [cartId], references: [id])
-    Additionals Additional[]
+    additionals Additional[]
 }
 
 model Order {

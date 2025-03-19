@@ -15,6 +15,7 @@ interface Props {
     onClick?: (value: Variant['value']) => void;
     value?: Variant['value'];
     className?: string;
+    // TODO добавить selectedValue
 }
 
 export const GroupVariants: React.FC<Props> = ({ className, items, onClick, value }) => {

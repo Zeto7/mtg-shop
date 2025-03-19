@@ -18,6 +18,7 @@ type ReturnProps = {
 }
 
 export const getCartDetails = (data: CartDTO): ReturnProps => {
+    console.log(data);
     const items = data.items.map((item) => ({
         id: item.id,
         quantity: item.quantity,
