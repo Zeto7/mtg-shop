@@ -1,7 +1,6 @@
 'use client';
 
 import React from "react"
-import { cn } from "@/shared/lib/utils"
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger, } from "@/shared/components/ui/sheet"
 import Link from "next/link"
 import { Button } from "../ui/button"
@@ -9,18 +8,17 @@ import { ArrowRight } from "lucide-react"
 import { CartDrawerItem } from "./cart-drawer-item"
 import { getCartItemDetails } from "@/shared/lib/get-cart-item-details"
 import { useCartStore } from "@/shared/store/cart";
-import { stat } from "fs";
 
 interface Props {
     className?: string
 }
 
 export const CartDrawer: React.FC<React.PropsWithChildren<Props>> = ({ children, className }) => {
-    // const [totalAmount, fetchCartItems, items] = useCartStore(state => [state.totalAmount, state.fetchCartItems, state.items]);
+    // const [totalAmount, fetchCartItems, items] = useCartStore((state) => [state.totalAmount, state.fetchCartItems, state.items]);
     
-    // React.useEffect(() => {
-    //     fetchCartItems();
-    // }, [])  
+    // // React.useEffect(() => {
+    // //     fetchCartItems();
+    // // }, []);
     return (
         <Sheet>
             <SheetTrigger asChild>{children}</SheetTrigger>
@@ -32,14 +30,20 @@ export const CartDrawer: React.FC<React.PropsWithChildren<Props>> = ({ children,
                 </SheetHeader>
 
                 <div className="-mx-3 mt-5 overflow-auto scrollbar flex-1 rounded-2xl">
-                    <div className="mb-2">
-                        <CartDrawerItem id={12}
-                            imageUrl={'https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/Final-Fantasy-Einsteigerpaket-englisch_195166271170.png'}
-                            details={getCartItemDetails([], [])}
-                            name={"Дуэльный набор Final Fantasy"}
-                            price={120}
-                            quantity={1} />
-                    </div>
+                    {/* <div className="mb-2">
+                        {
+                            items.map((item) => (
+                                <CartDrawerItem
+                                key={item.id} 
+                                id={item.id}
+                                imageUrl={item.imageUrl}
+                                details={getCartItemDetails([], [])}
+                                name={item.name}
+                                price={item.price}
+                                quantity={item.quantity} />
+                            ))
+                        }
+                    </div> */}
                 </div>
 
                 <SheetFooter className="-mx-6 bg-white p-8">
@@ -50,7 +54,7 @@ export const CartDrawer: React.FC<React.PropsWithChildren<Props>> = ({ children,
                                 <div className="flex-1 border-b border-dashed border-b-neutral-200 relative -top-1 mx-2" />
                             </span>
 
-                            <span className="font-bold text-lg">144 Br</span>
+                            <span className="font-bold text-lg">56 Br</span>
                         </div>
 
                         <Link href="/cart">

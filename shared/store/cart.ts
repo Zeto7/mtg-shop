@@ -28,6 +28,8 @@ export const useCartStore = create<CartState>((set, get) => ({
     loading: true,
     totalAmount: 0,
 
+    
+
     fetchCartItems: async () => {
         try {
             set({ loading: true, error: false });

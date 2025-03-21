@@ -32,5 +32,5 @@ export const getCartDetails = (data: CartDTO): ReturnProps => {
         })),
     }));
 
-    return { items, totalAmount: data.totalAmount }
+    return { items, totalAmount: data.totalAmount || 0 }
 }  
