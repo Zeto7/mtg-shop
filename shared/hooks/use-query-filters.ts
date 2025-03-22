@@ -7,7 +7,6 @@ export const useQueryFilters = (filters: Filters) => {
     const router = useRouter();
 
     React.useEffect(() => {
-        
         const params = {
             ...filters.prices,
             kitTypes: Array.from(filters.kitTypes),
@@ -18,5 +17,5 @@ export const useQueryFilters = (filters: Filters) => {
         const query = qs.stringify(params, { arrayFormat: 'comma'});
     
         router.push(`?${query}`, {scroll: false});
-    }, [filters, router]);
+    }, [filters]);
 }

@@ -53,14 +53,16 @@ export const useFilters = (): ReturnProps => {
         }));
     };
 
-    return {
-        amount, 
-        kitTypes, 
-        selectedAdditionals, 
-        prices, 
-        setPrices: updatePrice, 
-        setKitTypes: toggleKitTypes, 
-        setAmount: toggleAmount, 
-        setSelectedAdditionals: toggleAdditionals
-    };
+    return React.useMemo(
+        () => ({
+            amount, 
+            kitTypes, 
+            selectedAdditionals, 
+            prices, 
+            setPrices: updatePrice, 
+            setKitTypes: toggleKitTypes, 
+            setAmount: toggleAmount, 
+            setSelectedAdditionals: toggleAdditionals
+        }), [amount, kitTypes, selectedAdditionals, prices],
+    );
 }
