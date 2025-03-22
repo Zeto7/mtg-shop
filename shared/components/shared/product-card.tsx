@@ -4,6 +4,7 @@ import React from "react"
 import { Title } from "./title";
 import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
+import { Additional } from "@prisma/client";
 
 
 interface Props {
@@ -11,10 +12,11 @@ interface Props {
     name: string;
     price: number;
     imageUrl: string;
-    classname?: string
+    additionals: Additional[];
+    classname?: string;
 }
 
-export const ProductCard: React.FC<Props> = ({id, name, price, imageUrl, classname }) => {  
+export const ProductCard: React.FC<Props> = ({id, name, price, imageUrl, additionals, classname }) => {  
     return (
         <div className={cn(classname)}>
             <Link href={`/product/${id}`}>
@@ -23,7 +25,8 @@ export const ProductCard: React.FC<Props> = ({id, name, price, imageUrl, classna
                 </div>
 
                 <Title text={name} size="sm" className="mb-1 mt-3 font-bold"/>
-                <p className="text-sm text-gray-400">Какое-то описание подукта</p>
+                <p className="text-sm text-gray-400">Какое-то описание товара</p>
+                {/* <p className="text-sm text-gray-400"> {additionals.map((additional) => additional.name).join(", ")} </p> */}
 
                 <div className="flex justify-between items-center mt-15">
                     <span className="text-[20px]">

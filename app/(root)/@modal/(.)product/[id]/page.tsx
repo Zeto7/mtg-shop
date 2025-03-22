@@ -3,7 +3,12 @@ import { ChooseProductModals } from "@/shared/components/shared/modals/choose-pr
 import { notFound } from "next/navigation";
 
 export default async function ProductModalPage({params: {id}}: {params: {id: string}}) {
-    const product = await prisma.product.findFirst({ where: { id: Number(id), }, include: { Additionals: true, items: true, },});
+    const product = await prisma.product.findFirst({ where: { id: Number(id), }, 
+    include: {
+         Additionals: true, 
+         items: true, 
+        },
+    });
     
     if (!product) {
         return notFound();
