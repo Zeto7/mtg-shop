@@ -14,11 +14,23 @@ interface Props {
 }
 
 export const CartDrawer: React.FC<React.PropsWithChildren<Props>> = ({ children, className }) => {
-    // const [totalAmount, fetchCartItems, items] = useCartStore((state) => [state.totalAmount, state.fetchCartItems, state.items]);
+    // const [totalAmount, fetchCartItems, updateItemQuantity, removeCartItem, items] = useCartStore((state) => [
+    // state.totalAmount, 
+    // state.fetchCartItems, 
+    // state.updateItemQuantity,
+    // state.removeCartItem,
+    // state.items
+    // ]);
     
-    // // React.useEffect(() => {
-    // //     fetchCartItems();
-    // // }, []);
+    // React.useEffect(() => {
+    //     fetchCartItems();
+    // }, []);
+
+    // const onClickCountButton = (id: number, quantity: number, type: 'plus' | 'minus') => { 
+    //     const newQuantity = type === 'plus' ? quantity + 1 : quantity - 1;
+    //     updateItemQuantity(id, newQuantity);
+    // }
+
     return (
         <Sheet>
             <SheetTrigger asChild>{children}</SheetTrigger>
@@ -40,10 +52,23 @@ export const CartDrawer: React.FC<React.PropsWithChildren<Props>> = ({ children,
                                 details={getCartItemDetails([], [])}
                                 name={item.name}
                                 price={item.price}
-                                quantity={item.quantity} />
+                                quantity={item.quantity}
+                                onClickCountButton={type => onClickCountButton(item.id, item.quantity, type)} 
+                                onClickRemove={() => removeCartItem(item.id)}
+                                />
                             ))
                         }
                     </div> */}
+                    <div className="mb-2">
+                        <CartDrawerItem id={12}
+                            imageUrl={'https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/Final-Fantasy-Einsteigerpaket-englisch_195166271170.png'}
+                            details={getCartItemDetails([], [])}
+                            name={"Дуэльный набор Final Fantasy"}
+                            price={120}
+                            quantity={1} 
+                            //onClickCountButton={type => onClickCountButton(12, 1, type)} 
+                            />
+                    </div>
                 </div>
 
                 <SheetFooter className="-mx-6 bg-white p-8">

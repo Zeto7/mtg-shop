@@ -8,6 +8,7 @@ import { KitAmount, kitAmount } from "@/shared/constants/kit";
 import { Additional, ProductItem } from "@prisma/client";
 import { AdditionalItem } from "./additional-item";
 import { useSet } from "react-use";
+import { on } from "events";
 
 interface Props {
     imageUrl: string;
@@ -15,11 +16,12 @@ interface Props {
     className?: string; 
     additionals: Additional[];
     items: ProductItem[];
+    onSubmit: (itemId: number, additionals: number[]) => void
     onClickAddCart?: VoidFunction;
 }
 
 
-export const ChooseKitForm: React.FC<Props> = ({ className, imageUrl, name, additionals, items, onClickAddCart }) => {
+export const ChooseKitForm: React.FC<Props> = ({ className, imageUrl, name, additionals, items, onSubmit, onClickAddCart }) => {
     const [amount, setAmount] = React.useState<KitAmount>(1);
     const [selectedAdditionals, {toggle: addAdditional}] = useSet(new Set<number>([]));
 
@@ -33,7 +35,9 @@ export const ChooseKitForm: React.FC<Props> = ({ className, imageUrl, name, addi
     const textDetails = `Кол-во наборов: ${String(amount)}, ${selectedAdditionals.size} дополнительных бустеров: ${selectedAdditionalNames.join(', ')}`;
 
     const handleClickAdd = () => {onClickAddCart?.();
-      console.log({amount, selectedAdditionals, kitPrice, totalAdditionnalsPrice, totalPrice});
+      if(currentItemId) {
+        onSubmit(currentItemId, Array.from(selectedAdditionals));
+      }
     }
 
     const filteredkitsByType = items.filter((item) => item.amount === amount);
@@ -42,6 +46,8 @@ export const ChooseKitForm: React.FC<Props> = ({ className, imageUrl, name, addi
       value: item.value,
       disabled: !filteredkitsByType.some((kit) => Number(kit.amount) === Number(item.value)),
     }));
+
+    const currentItemId = items.find((item) => item.amount === amount)?.id;
 
     React.useEffect(() => {
       const isAvaliableAmount = availablekitsCount?.find((item) => Number(item.value) === amount && !item.disabled);
