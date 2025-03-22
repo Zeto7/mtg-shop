@@ -29,10 +29,6 @@ export const ChooseKitForm: React.FC<Props> = ({ className, imageUrl, name, addi
     const kitPrice = items.find((item) => item.amount === amount)?.price || 0;
     const totalAdditionnalsPrice = additionals.filter((additional) => selectedAdditionals.has(additional.id)).reduce((acc, additional) => acc + additional.price, 0);
     const totalPrice = kitPrice + totalAdditionnalsPrice;
-    
-    
-    const selectedAdditionalNames = additionals.filter((additional) => selectedAdditionals.has(additional.id)).map((additional) => additional.name + '. Booster');
-    const textDetails = `Кол-во наборов: ${String(amount)}, ${selectedAdditionals.size} дополнительных бустеров: ${selectedAdditionalNames.join(', ')}`;
 
     const handleClickAdd = () => {onClickAddCart?.();
       if(currentItemId) {
@@ -64,7 +60,6 @@ export const ChooseKitForm: React.FC<Props> = ({ className, imageUrl, name, addi
 
         <div className="w-[490px] bg-[#FCFCFC] p-7">
             <Title text={name} size="md" className="font-extrabold mb-1"/>
-            <p className="text-[#5C6370]">{textDetails}</p>
             <GroupVariants className=" gap-4 mt-3" items={availablekitsCount} value={String(amount)} onClick={value => setAmount(Number(value))}/>
             <p className="text-[#5C6370] mt-6">Дополнительный бустер</p>
               <div className="bg-[gray-100] mt-2 p-5 rounded-md h-[430px] overflow-auto scrollbar">

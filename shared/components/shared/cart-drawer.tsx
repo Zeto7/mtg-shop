@@ -13,6 +13,7 @@ interface Props {
     className?: string
 }
 
+    // TODO : починить добавление товаров к корзину
 export const CartDrawer: React.FC<React.PropsWithChildren<Props>> = ({ children, className }) => {
     // const [totalAmount, fetchCartItems, updateItemQuantity, removeCartItem, items] = useCartStore((state) => [
     // state.totalAmount, 

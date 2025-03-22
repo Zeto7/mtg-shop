@@ -8,6 +8,7 @@ import { ChooseProductForm } from "../choose-product-form";
 import { ProductWithRelations } from "@/@types/prisma";
 import { ChooseKitForm } from "../choose-kit-form";
 import { useCartStore } from "@/shared/store/cart";
+import toast from "react-hot-toast";
 
 interface Prors {
     product: ProductWithRelations;
@@ -20,24 +21,30 @@ export const ChooseProductModals: React.FC<Prors> = ({ className, product }) => 
     const isKitForm = Boolean(firsItem.amount)
     const addCartItem = useCartStore(state => state.addCartItem)
 
-    const onAddProduct = () => {
-        addCartItem({
-            productItemId: firsItem.id,
-        });
+    const onSubmitProduct = () => onSubmit(firsItem.id, []);
+    const onSubmit = async (productItemId: number, additionals: number[]) => {
+        try {
+            const itemId = productItemId ?? firsItem.id;
+
+            await addCartItem({
+                productItemId: itemId,
+                additionals
+            });
+            toast.success('Товар добавлен в корзину');
+            router.back();
+        }
+        catch (error) {
+            toast.error('Произошла ошибка при добавлении товара в корзину');
+            console.error(error);
+        }
     };
-    const onAddKit = (productItemId: number, additionals: number[]) => {
-        addCartItem({
-            productItemId,
-            additionals,
-        });
-    }
     return (
         <Dialog open={Boolean(product)} onOpenChange={() => router.back()}>
             <DialogContent className={cn("p-0 w-[1160px]` max-w-[1160px] min-h-[700px] bg-white overflow-hidden", className)}>
                 <DialogTitle className="hidden"/>
                 { isKitForm ? 
-                    ( <ChooseKitForm imageUrl={product.imageUrl} name={product.name} additionals={product.additionals} items={product.items} onSubmit={onAddKit} /> ) : 
-                    ( <ChooseProductForm imageUrl={product.imageUrl} name={product.name} items={[]} price={firsItem.price} onSubmit={onAddProduct}/> )
+                    ( <ChooseKitForm imageUrl={product.imageUrl} name={product.name} additionals={product.additionals} items={product.items} onSubmit={onSubmit} /> ) : 
+                    ( <ChooseProductForm imageUrl={product.imageUrl} name={product.name} price={firsItem.price} onSubmit={onSubmitProduct}/> )
                 }
             </DialogContent>
         </Dialog>
