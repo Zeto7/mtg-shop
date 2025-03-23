@@ -76,16 +76,16 @@ export async function POST(req: NextRequest) {
                     quantity: findCartItem.quantity + 1,
                 },
             });
+        } else {
+            await prisma.cartItem.create({
+                data: {
+                    cartId: userCart.id,
+                    productItemId: data.productItemId,
+                    quantity: 1,
+                    additionals: { connect: data.additionals?.map((id) => ({ id })) },
+                },
+            });
         }
-
-        await prisma.cartItem.create({
-            data: {
-                cartId: userCart.id,
-                productItemId: data.productItemId,
-                quantity: 1,
-                additionals: { connect: data.additionals?.map((id) => ({ id })) },
-            },
-        });
 
         const updateUserCArt = await updateCartTotalAmount(token);
         const resp =  NextResponse.json(updateUserCArt);
