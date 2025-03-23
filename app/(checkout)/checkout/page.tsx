@@ -8,38 +8,43 @@ import { WhiteBlock } from "@/shared/components/shared/white-block";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Textarea } from "@/shared/components/ui/textarea";
+import { useaCart } from "@/shared/hooks/use-cart";
+import { getCartItemDetails } from "@/shared/lib/get-cart-item-details";
 import { ArrowRight, Car, Package, Percent } from "lucide-react";
 
 export default function Checkout() {
+    const {totalAmount, updateItemQuantity, items, removeCartItem} = useaCart();
+
+    const onClickCountButton = (id: number, quantity: number, type: 'plus' | 'minus') => { 
+        const newQuantity = type === 'plus' ? quantity + 1 : quantity - 1;
+        updateItemQuantity(id, newQuantity);
+    }
+
     return <Container className="mt-5">
         <Title text="Оформление заказа" className="font-extrabold mb-8 text-[36px]" />
-
+        
         <div className="flex gap-10">
+
             {/*Левая часть*/}
-            <div className="flex flex-col gap-10 flex-1 mb-10">
+            <div className="flex flex-col gap-10 flex-1 mb-20">
                 <WhiteBlock title="1. Корзина">
-                    <div className="flex flex-col gap-8">
-                    <CheckoutItem onClickRemove={function (): void { 
-                        throw new Error("Function not implemented.");} } 
-                        onClickCountButton={undefined} 
-                        id={12} 
-                        imageUrl="https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/Final-Fantasy-Einsteigerpaket-englisch_195166271170.png"
-                        details="Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quas." 
-                        name="Дуэльный набор Final Fantasy"
-                        price={120} 
-                        quantity={1}
-                    />
-                    <CheckoutItem onClickRemove={function (): void { 
-                        throw new Error("Function not implemented.");} } 
-                        onClickCountButton={undefined} 
-                        id={12} 
-                        imageUrl="https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/Final-Fantasy-Einsteigerpaket-englisch_195166271170.png"
-                        details="Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quas." 
-                        name="Дуэльный набор Final Fantasy"
-                        price={120} 
-                        quantity={1}
-                    />
-                    </div>
+                    { items.map((item) =>(
+                        <div className="flex flex-col mb-5">
+                        <CheckoutItem onClickRemove={function (): void { 
+                            throw new Error("Function not implemented.");} } 
+                            onClickCountButton={undefined} 
+                            key={item.id}
+                            id={item.id} 
+                            imageUrl={item.imageUrl}
+                            details={getCartItemDetails(item.additionals, item.kitAmount)}
+                            name={item.name}
+                            price={item.price} 
+                            quantity={item.quantity}
+                            onClickCountButton={type => onClickCountButton(item.id, item.quantity, type)} 
+                            onClickRemove={() => removeCartItem(item.id)}
+                        />
+                        </div>
+                    ))}
                 </WhiteBlock>
 
                 <WhiteBlock title="1. Персональные данные">
@@ -64,7 +69,7 @@ export default function Checkout() {
                 <WhiteBlock className="p-6 sticky top-4">
                     <div className="flex flex-col gap-1">
                         <span className="text-xl">Итого:</span>
-                        <span className="text-3xl font-extrabold">144 Br</span>
+                        <span className="text-3xl font-extrabold">{totalAmount} Br</span>
                     </div>
 
                     <CheckoutItemDetails title={<div className="flex items-center"> 

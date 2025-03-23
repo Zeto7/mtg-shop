@@ -6,7 +6,7 @@ import { CartStateItem } from "./get-cart-details"
 
 
 
-export const getCartItemDetails = (additionals: CartStateItem['additionals'] | null, kitAmount?: KitAmount[] | null ): string => {
+export const getCartItemDetails = (additionals: CartStateItem['additionals'], kitAmount?: KitAmount[]): string => {
     const details = [];
 
     if (kitAmount) {
