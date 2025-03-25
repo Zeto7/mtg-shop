@@ -9,7 +9,7 @@ export const categories = [
         name: 'Командир'
     },
     {
-        name: 'Банлы'
+        name: 'Бандлы'
     },
     {
         name: 'Бустеры'
@@ -105,7 +105,7 @@ export const products = [
             imageUrl: 'https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/marsch_der_maschine_march_of_the_machine_englisch_english_draft_booster_guenstig_billig_kaufen_mtg.png',
         },
         {
-            name: 'Commander Legends: Battle for Baldurs Gate. Draft Booster ',
+            name: 'Commander Legends: Battle for Baldurs Gate. Draft Booster',
             categoryId: 5,
             price: 21.5,
             imageUrl: 'https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/mtgclb_en_bstr_drft_01_02.png',
@@ -123,13 +123,13 @@ export const products = [
             imageUrl: 'https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/dominaria_united_dominarias_bund_draft_booster_englisch_english_guenstig_billig_kaufen_mtg_1.png',
         },
         {
-            name: ' Streets of New Capenna. Set Booster',
+            name: 'Streets of New Capenna. Set Booster',
             categoryId: 5,
             price: 23,
             imageUrl: 'https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/strassen-von-neu-capenna-set-booster-deutsch-snc-mtg-magic-the-gathering-kaufen.png',
         },
         {
-            name: 'Universes Beyond: Assassins Creed. Beyond Booster ',
+            name: 'Universes Beyond: Assassins Creed. Beyond Booster',
             categoryId: 5,
             price: 32,
             imageUrl: 'https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/assassins_creed_beyond_booster_pack_deutsch_german_guenstig_billig_kaufen_tcg_mtg_acr.png',

@@ -7,6 +7,7 @@ import { WhiteBlock } from "./white-block";
 interface Props {
     totalAmount: number
     className?: string
+    submitting?: boolean
 }
 
 const VAT = 3;

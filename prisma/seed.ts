@@ -54,7 +54,7 @@ async function up() {
               "https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/Final-Fantasy-Einsteigerpaket-englisch_195166271170.png",
             categoryId: 1,
             price: 120,
-            Additionals: {
+            additionals: {
               connect: _additionals.slice(0, 11),
             },
           },
@@ -67,7 +67,7 @@ async function up() {
               "https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/magic_the_gathering_einsteigerpaket_2023_starter_kit_englisch_english_guenstig_billig_kaufen_tcg_mtg.png",
             categoryId: 1,
             price: 91,
-            Additionals: {
+            additionals: {
               connect: _additionals.slice(0, 11),
             },
           },
@@ -80,7 +80,7 @@ async function up() {
               "https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/assassins_creed_einsteiger_paket_starter_kit_englisch_english_guenstig_billig_kaufen_tcg_mtg_acr.png",
             categoryId: 1,
             price: 86,
-            Additionals: {
+            additionals: {
               connect: _additionals.slice(0, 11),
             },
           },
@@ -93,7 +93,7 @@ async function up() {
               "https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/bloomburrow_starter_kit_englisch_english_guenstig_billig_kaufen_tcg_mtg_blb.png",
             categoryId: 1,
             price: 65,
-            Additionals: {
+            additionals: {
               connect: _additionals.slice(0, 11),
             },
           },
@@ -106,7 +106,7 @@ async function up() {
               "https://www.trader-online.de/out/pictures/generated/product/1/540_340_75/the_lord_of_the_rings_tales_of_middle-earth_starter_kit_englisch_english_guenstig_billig_kaufen_ltr_tcg_mtg_2.png",
             categoryId: 1,
             price: 71,
-            Additionals: {
+            additionals: {
               connect: _additionals.slice(0, 11),
             },
           },
@@ -124,7 +124,7 @@ async function up() {
 
             generateProductItem({ productId: item3.id, amount: 3 }),
             generateProductItem({ productId: item3.id, amount: 3 }),
-            generateProductItem({ productId: item3.id, amount: 1 }),
+            generateProductItem({ productId: item3.id, amount: 1 }),    
 
             // // Остальное
             generateProductItem({ productId: 1 }),

@@ -28,7 +28,7 @@ export const findKits = async (params: GetSearchParams) => {
                     id: 'desc',
                 },
                 where: {
-                    Additionals: additionalsIdArr ? {
+                    additionals: additionalsIdArr ? {
                         some: {
                             id: {
                             in: additionalsIdArr,
