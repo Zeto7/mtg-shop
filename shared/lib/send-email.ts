@@ -7,6 +7,7 @@ export const sendEmail = async (to: string, subject: string, template: React.Rea
         from: 'onboarding@resend.dev',
         to,
         subject,
+        text: '',
         react: template,
     });
 
