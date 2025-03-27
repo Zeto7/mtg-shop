@@ -4,8 +4,10 @@ import { prisma } from "@/prisma/prisma-client";
 import { CheckoutFormValues } from "@/shared/components/shared/checkout-components/checkout-form-schema";
 import { PayOrderTemplate } from "@/shared/components/shared/email-templates/pay-order";
 import { createPayment } from "@/shared/lib/create-payment";
+import { getUserSession } from "@/shared/lib/get-user-session";
 import { sendEmail } from "@/shared/lib/send-email";
-import { Order, OrderStatus } from "@prisma/client";
+import { OrderStatus, Prisma } from "@prisma/client";
+import { hashSync } from "bcrypt";
 import { cookies } from "next/headers";
 
 export async function createOrder(data: CheckoutFormValues) {
@@ -108,5 +110,62 @@ export async function createOrder(data: CheckoutFormValues) {
         return paymentUrl;
     } catch (error) {
         console.log('[CREATE_ORDER] Server error',error);
+    }
+}
+
+export async function updateUserInfo(body: Prisma.UserUpdateInput) {
+    try {
+        const currentUser = await getUserSession();
+    
+        if (!currentUser) {
+            throw new Error('Пользователь не найден');
+        }
+
+        const findUser = await prisma.user.findFirst({
+            where: {
+                id: Number(currentUser.id),
+            },
+        });
+    
+        await prisma.user.update({
+            where: {
+                id: Number(currentUser.id),
+            },
+            data: {
+                fullName: body.fullName,
+                password: body.password ? hashSync(body.password as string, 10) : findUser?.password,
+            },
+        });
+    } catch (error) {
+        console.log('Error [UPDATE_USER]', error);
+        throw error;
+    }
+};
+
+export async function registerUser(body: Prisma.UserCreateInput) {
+    try {
+        const user = await prisma.user.findFirst({
+            where: {
+                email: body.email,
+            }
+        })
+
+        if (user) {
+            if (!user.verified) {
+              throw new Error('Почта не подтверждена');
+            }
+            throw new Error('Пользователь уже зарегистрирован');
+        }
+
+        const createdUser = await prisma.user.create({
+            data: {
+              fullName: body.fullName,
+              email: body.email,
+              password: hashSync(body.password, 10),
+            },
+        });
+    } catch (error) {
+        console.log('Error [REGISTER_USER]', error);
+        throw error;
     }
 }
