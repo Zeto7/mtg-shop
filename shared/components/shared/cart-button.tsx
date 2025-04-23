@@ -5,14 +5,13 @@ import { Button } from "../ui/button"
 import React from "react"
 import { cn } from "@/shared/lib/utils"
 import { CartDrawer } from "./cart-drawer"
-import { useCartStore } from "@/shared/store/cart"
 import { useaCart } from "@/shared/hooks/use-cart";
 
 interface Props {
     className?: string
 }
 
-// TODO : исправить отображениеинформации на кнопке
+// TODO : исправить отображение информации на кнопке
 
 export const CartButton: React.FC<Props> = ({className}) => {
     const {totalAmount, items} = useaCart();

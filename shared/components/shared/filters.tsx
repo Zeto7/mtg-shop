@@ -29,31 +29,6 @@ export const Filters: React.FC<Props> = ({ classname }) => {
         <div className={classname}>
             <Title text="Фильтрация" size="sm" className="mb-5 font-bold"/>
 
-            <CheckboxFiltersGroup
-                name="kitTypes"
-                className="mb-5"
-                title=""
-                onClickCheckbox={filters.setKitTypes}
-                selected={filters.kitTypes}
-                items={[
-                    { text: 'Популярное', value: '1' },
-                    { text: 'Новое', value: '2' },
-                ]}
-            />
-
-            <CheckboxFiltersGroup
-                name="amount"
-                className="mb-5"
-                title="Количество"
-                onClickCheckbox={filters.setAmount}
-                selected={filters.amount}
-                items={[
-                    { text: '1x', value: '1' },
-                    { text: '2x', value: '2' },
-                    { text: '3x', value: '3' },
-                ]}
-            />
-
             <div className="mt-5 border-y border-y-neutral-100 py-6 pb-7">
                 <p className="font-bold mt-3">Цена от и до:</p>
                 <div className="flex items-center gap-2 mt-3 mb-3">

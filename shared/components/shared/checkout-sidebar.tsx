@@ -10,12 +10,10 @@ interface Props {
     submitting?: boolean
 }
 
-const VAT = 3;
 const DELIVERY_PRICE = 20;
 
 export const CheckoutSidebar: React.FC<Props> = ({className, totalAmount}) => {
-    const vatPrice = (totalAmount * VAT) / 100;
-    const totalPrice = totalAmount + DELIVERY_PRICE + vatPrice;
+    const totalPrice = totalAmount + DELIVERY_PRICE;
 
     return (
         <div className="w-[450px]">
@@ -28,10 +26,6 @@ export const CheckoutSidebar: React.FC<Props> = ({className, totalAmount}) => {
                 <CheckoutItemDetails title={<div className="flex items-center"> 
                     <Package className="mr-2 text-gray-300"/> Стоимость товаров:
                     </div>} value={`${totalAmount}`}
-                />
-                <CheckoutItemDetails title={<div className="flex items-center"> 
-                    <Percent className="mr-2 text-gray-300"/> Налог:
-                    </div>} value={`${vatPrice}`}
                 />
                 <CheckoutItemDetails title={<div className="flex items-center"> 
                     <Car className="mr-2 text-gray-300"/> Доставка:

@@ -40,13 +40,13 @@ export const findKits = async (params: GetSearchParams) => {
                         amount: {
                             in: amount,
                         },
-                    price: {
+                    price: { 
                         gte: minPrice,
                         lte: maxPrice,
                     },
                     },
                 },
-                },
+                },  
                 include: {
                     items: {
                         where: {

@@ -10,15 +10,6 @@ interface Props {
     classname?: string;
 }
 
-// const cats = [
-//     {id: 1, name: "Дуо наборы"},
-//     {id: 2, name: "Planeswalker наборы"},
-//     {id: 3, name: "Командир"},
-//     {id: 4, name: "Бандлы"},
-//     {id: 5, name: "Бустеры"},
-//     {id: 6, name: "Дисплеи"},
-// ];
-
 export const Categories: React.FC<Props> = ({ classname, items }) => {  
     const categoryActiveId = useCategoryStore((state) => state.activeId);
     return (

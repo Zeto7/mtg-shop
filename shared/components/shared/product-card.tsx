@@ -25,7 +25,6 @@ export const ProductCard: React.FC<Props> = ({id, name, price, imageUrl, additio
                 </div>
 
                 <Title text={name} size="sm" className="mb-1 mt-3 font-bold"/>
-                <p className="text-sm text-gray-400">Какое-то описание товара</p>
                 {/* <p className="text-sm text-gray-400"> {additionals.map((additional) => additional.name).join(", ")} </p> */}
 
                 <div className="flex justify-between items-center mt-15">
