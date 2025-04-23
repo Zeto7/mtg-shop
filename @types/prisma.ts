@@ -1,3 +1,16 @@
-import { Additional, Product, ProductItem } from "@prisma/client";
+import { Prisma, Product, Category, ProductItem, Additional } from '@prisma/client';
 
-export type ProductWithRelations =  Product & { items: ProductItem[]; additionals: Additional[]; };
+const productWithRelationsValidator = Prisma.validator<Prisma.ProductDefaultArgs>()({
+  include: {
+    category: true,
+    items: true,
+    additionals: true,
+  },
+});
+
+export type ProductWithRelations = Prisma.ProductGetPayload<typeof productWithRelationsValidator>;
+
+// Другие типы остаются такими же
+export type CategoryData = Category;
+export type AdditionalData = Additional;
+export type ProductItemData = ProductItem;
