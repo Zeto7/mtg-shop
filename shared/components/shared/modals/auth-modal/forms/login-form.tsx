@@ -7,12 +7,17 @@ import { FormInput } from "../../../form-components/form-input";
 import { Button } from "@/shared/components/ui/button";
 import toast from "react-hot-toast";
 import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 interface Props {
     onClose?: () => void;
 }
 
-export const LoginForm: React.FC<Props> =({onClose}) => {
+const ADMIN_EMAIL = "Admin1@example.com";
+
+export const LoginForm: React.FC<Props> = ({ onClose }) => {
+    const router = useRouter();
+
     const form = useForm<TFormLoginValues>({
         resolver: zodResolver(formLoginSchema),
         defaultValues: {
@@ -22,45 +27,57 @@ export const LoginForm: React.FC<Props> =({onClose}) => {
     });
 
     const onSubmit = async (data: TFormLoginValues) => {
-        try{
+
+        try {
             const resp = await signIn('credentials', {
                 ...data,
                 redirect: false,
             });
 
-            if (!resp?.ok) {
-                throw Error();
+            if (resp?.ok) {
+                if (data.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+                    toast.success('Вход выполнен. Перенаправление...', {
+                        icon: '⚙️',
+                    });
+                    onClose?.();
+                    router.push('/dashboard');
+                } else {
+                    toast.success('Вы вошли в аккаунт', {
+                        icon: '✅',
+                    });
+                    onClose?.();
+                }
+
+            } else {
+                throw new Error(resp?.error || "Неверные учетные данные");
             }
 
-            toast.success('Вы вошли в аккаунт', {
-                icon: '✅',
-            });
-
-            onClose?.();
-        } catch (error) {
-            console.log('Error [LOGIN]', error);
-            toast.error('Не удалось войти', {
+        } catch (error: any) {
+            console.error('Error [LOGIN]', error);
+            toast.error(error.message || 'Не удалось войти', {
                 icon: '❌',
             });
         }
     }
 
-    return <FormProvider {...form}>
-        <form className="flex flex-col gap-5" onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="flex justify-between items-center">
-                <div className="mr-2">
-                    <Title text="Вход в аккаунт" size="md" className="font-bold" />
-                    <p className="text-gray-400">Введите свою почту, чтобы войти в свой аккаунт</p>
+    return (
+        <FormProvider {...form}>
+            <form noValidate className="flex flex-col gap-5" onSubmit={form.handleSubmit(onSubmit)}>
+                <div className="flex justify-between items-center">
+                    <div className="mr-2">
+                        <Title text="Вход в аккаунт" size="md" className="font-bold" />
+                        <p className="text-gray-400">Введите свою почту, чтобы войти в свой аккаунт</p>
+                    </div>
+                    <img src="/assets/images/phone-icon.png" alt="phone-icon" width={60} height={60} />
                 </div>
-                <img src="/assets/images/phone-icon.png" alt="phone-icon" width={60} height={60} />
-            </div>
 
-            <FormInput name="email" label="E-Mail" required />
-            <FormInput type="password" name="password" label="Пароль" required />
+                <FormInput name="email" label="E-Mail" required />
+                <FormInput type="password" name="password" label="Пароль" required />
 
-            <Button className="h-12 text-base" type="submit">
-                { form.formState.isSubmitting ? 'Вход...' : 'Войти' }
-            </Button>
-        </form>
-    </FormProvider>
+                <Button className="h-12 text-base" type="submit" disabled={form.formState.isSubmitting}>
+                    { form.formState.isSubmitting ? 'Вход...' : 'Войти' }
+                </Button>
+            </form>
+        </FormProvider>
+    );
 }

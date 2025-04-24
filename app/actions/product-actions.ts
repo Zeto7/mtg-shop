@@ -8,18 +8,18 @@ import { ProductWithRelations } from '@/@types/prisma';
 const productItemSchema = z.object({
     // id не нужен для создания, но может быть нужен для обновления/удаления
     id: z.number().optional(),
-    amount: z.coerce.number().int().min(0).optional().nullable(), // Количество, может быть null
-    price: z.coerce.number().int().min(0, 'Item price must be non-negative'), // Цена вариации (в копейках/центах?)
+    amount: z.coerce.number().int().min(0).optional().nullable(),
+    price: z.coerce.number().int().min(0, 'Item price must be non-negative'),
 });
 
 const productSchemaBase = z.object({
     name: z.string().min(3, 'Name must be at least 3 characters'),
     description: z.string().optional(),
     imageUrl: z.string().url('Invalid image URL').or(z.literal('')),
-    price: z.coerce.number().int().min(0, 'Base price must be non-negative'), // Базовая цена продукта
+    price: z.coerce.number().int().min(0, 'Base price must be non-negative'),
     categoryId: z.coerce.number().int().positive('Category is required'),
-    items: z.array(productItemSchema).min(1, 'Product must have at least one variation/item'), // Хотя бы одна вариация
-    additionalIds: z.array(z.coerce.number().int().positive()).optional(), // Массив ID связанных дополнений
+    items: z.array(productItemSchema).min(1, 'Product must have at least one variation/item'),
+    additionalIds: z.array(z.coerce.number().int().positive()).optional(),
 });
 
 const createProductSchema = productSchemaBase; // ID нет при создании
@@ -30,7 +30,7 @@ const updateProductSchema = productSchemaBase.extend({
 });
 
 
-// --- Функции для получения данных ---
+// Функции для получения данных
 
 export async function getProducts(): Promise<ProductWithRelations[]> {
     try {
@@ -66,8 +66,6 @@ export async function getAllAdditionals() {
     }
 }
 
-// --- Actions для CRUD ---
-
 // Распарсить данные формы, включая JSON строки для items и additionals
 function parseFormData(formData: FormData) {
     const rawData = Object.fromEntries(formData.entries());
@@ -79,11 +77,10 @@ function parseFormData(formData: FormData) {
             parsedData.items = JSON.parse(rawData.items);
         } catch (e) {
             console.error("Failed to parse items JSON:", e);
-            // Устанавливаем невалидное значение, чтобы валидация Zod провалилась
              parsedData.items = null;
         }
     } else if (!rawData.items) {
-         parsedData.items = []; // Если поле items не передано, считаем пустым массивом
+         parsedData.items = [];
     }
 
 
@@ -95,7 +92,7 @@ function parseFormData(formData: FormData) {
              if(Array.isArray(ids) && ids.every(id => typeof id === 'number')) {
                  parsedData.additionalIds = ids;
              } else {
-                 parsedData.additionalIds = null; // Невалидные данные
+                 parsedData.additionalIds = null;
              }
         } catch (e) {
             console.error("Failed to parse additionalIds JSON:", e);
@@ -142,7 +139,6 @@ export async function addProductAction(formData: FormData) {
                 imageUrl: productData.imageUrl || '', // Prisma ожидает строку, не null по схеме
                 description: productData.description,
                 items: {
-                    // Создаем связанные ProductItem
                     create: items.map(item => ({
                         price: item.price,
                         amount: item.amount,
@@ -233,7 +229,6 @@ export async function updateProductAction(formData: FormData) {
         return { success: true, product: updatedProduct };
     } catch (error) {
         console.error("Failed to update product:", error);
-         // Проверяем на特定 ошибки Prisma, если нужно
         return { success: false, message: "Database error: Failed to update product." };
     }
 }
@@ -245,9 +240,6 @@ export async function deleteProductAction(productId: number) {
     }
 
     try {
-         // Важно: Удаление продукта повлечет каскадное удаление ProductItem (по умолчанию)
-         // Убедитесь, что это желаемое поведение, или настройте onDelete в схеме.
-         // Связи M-N с Additional будут удалены автоматически из связующей таблицы.
         await prisma.product.delete({
             where: { id: productId },
         });
@@ -256,10 +248,7 @@ export async function deleteProductAction(productId: number) {
     } catch (error) {
         console.error("Failed to delete product:", error);
          if (error instanceof Prisma.PrismaClientKnownRequestError) {
-             // Пример обработки ошибки внешнего ключа (если продукт используется в CartItem/Order)
              if (error.code === 'P2003') { // Foreign key constraint failed
-                  // В вашей схеме нет прямых связей Product -> Order/CartItem (они идут через ProductItem)
-                  // Но если бы были, обработка была бы здесь.
                  return { success: false, message: "Cannot delete product. It might be referenced elsewhere." };
              }
               if (error.code === 'P2025') { // Record to delete not found

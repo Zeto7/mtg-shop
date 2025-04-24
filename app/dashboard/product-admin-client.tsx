@@ -31,7 +31,7 @@ function ProductListItem({ product, onEdit, onDelete }: {
                  <div>
                      <h2 className="text-lg font-bold">{product.name}</h2>
                      <p className="text-sm text-gray-600">Категория: {product.category?.name || 'N/A'}</p>
-                     <p className="text-sm text-gray-600">Базовая цена: {(product.price).toFixed(2)}</p> {/* Пример отображения цены */}
+                     <p className="text-sm text-gray-600">Базовая цена: {(product.price).toFixed(2)}</p>
                  </div>
                  <div className="flex space-x-2 flex-shrink-0">
                      <Button variant="outline" size="sm" onClick={() => onEdit(product)}>
@@ -60,7 +60,7 @@ function ProductListItem({ product, onEdit, onDelete }: {
                  </div>
              )}
 
-             {/* Отображение дополнений (additionals) */}
+             {/* Отображение additionals */}
               {product.additionals && product.additionals.length > 0 && (
                  <div>
                      <span className="text-sm font-medium">Доп. товары: </span>

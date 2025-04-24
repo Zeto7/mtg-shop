@@ -1,23 +1,20 @@
 'use client';
 
-// Добавляем useState и useMemo
 import { useForm, SubmitHandler, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ProductWithRelations, CategoryData, AdditionalData } from '@/@types/prisma';
 import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input"; // Input уже импортирован
+import { Input } from "@/shared/components/ui/input";
 import { Label } from '../ui/label';
 import { Textarea } from "@/shared/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 import { toast } from 'react-hot-toast';
-// Добавляем useState и useMemo
-import { useState, useMemo } from 'react'; // <--- ДОБАВЛЕНО
+import { useState, useMemo } from 'react';
 import { addProductAction, updateProductAction } from '@/app/actions/product-actions';
 import { Trash2 } from 'lucide-react';
 
-// Схема Zod (как в вашем коде)
 const formSchema = z.object({
     id: z.number().optional(),
     name: z.string().min(3),
@@ -48,10 +45,8 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
     const [isSubmitting, setIsSubmitting] = useState(false);
     const isEditMode = !!product;
 
-    // Состояние для поискового запроса дополнений
-    const [addonSearchTerm, setAddonSearchTerm] = useState(''); // <--- ДОБАВЛЕНО
+    const [addonSearchTerm, setAddonSearchTerm] = useState('');
 
-    // useForm (как в вашем коде)
     const { register, handleSubmit, formState: { errors }, control, reset, watch } = useForm<ProductFormData>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -70,20 +65,17 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
         },
     });
 
-    // useFieldArray (как в вашем коде)
     const { fields: itemFields, append: appendItem, remove: removeItem } = useFieldArray({
         control,
         name: "items",
         keyName: "fieldId"
     });
 
-    // watch (как в вашем коде)
     const selectedAdditionalIds = watch('additionalIds') || [];
 
-    // Фильтруем additional с использованием useMemo
     const filteredAdditionals = useMemo(() => {
         if (!addonSearchTerm) {
-            return allAdditionals; // Показываем все, если поиск пуст
+            return allAdditionals;
         }
         const lowerCaseSearch = addonSearchTerm.toLowerCase();
         return allAdditionals.filter(additional =>
@@ -93,7 +85,6 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
 
 
     const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
-         // ... (логика отправки формы onSubmit - без изменений)
          setIsSubmitting(true);
          const formData = new FormData();
          Object.entries(data).forEach(([key, value]) => {
@@ -111,7 +102,6 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
              } else {
                  result = await addProductAction(formData);
              }
-            // ... (обработка результата success/error)
              if (result.success) {
                  toast.success(`Товар ${isEditMode ? 'обновлен' : 'добавлен'} успешно!`);
                  reset();
@@ -138,7 +128,6 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
-            {/* Основные поля продукта (как в вашем коде) */}
              <div>
                  <Label htmlFor="name">Название продукта</Label>
                  <Input id="name" {...register('name')} aria-invalid={errors.name ? "true" : "false"} />
@@ -185,8 +174,6 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
                  <Textarea id="description" {...register('description')} />
              </div>
 
-
-            {/* Динамические поля для ProductItem (как в вашем коде) */}
             <div className="space-y-4 border p-4 rounded">
                 <Label className="text-lg font-medium">Вариации продукта</Label>
                 {itemFields.map((field, index) => (
@@ -230,13 +217,11 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
                 </Button>
             </div>
 
-             {/* Выбор доступных Additionals с поиском */}
-             <div className="space-y-4 border p-4 rounded"> {/* <--- ДОБАВЛЕНО: space-y-4 */}
-                 <Label className="text-lg font-medium block mb-2">Доп. товары на карточке</Label> {/* <--- ДОБАВЛЕНО: block mb-2 */}
+             <div className="space-y-4 border p-4 rounded">
+                 <Label className="text-lg font-medium block mb-2">Доп. товары на карточке</Label>
 
-                 {/* Строка поиска */}
-                 <div className="mb-4"> {/* <--- ДОБАВЛЕНО */}
-                     <Label htmlFor="addon-search" className="sr-only">Поиск доп. товаров</Label> {/* Скрытый лейбл */}
+                 <div className="mb-4">
+                     <Label htmlFor="addon-search" className="sr-only">Поиск доп. товаров</Label>
                      <Input
                          id="addon-search"
                          type="text"
@@ -247,15 +232,13 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
                      />
                  </div>
 
-                 {/* Список дополнений */}
                  <Controller
                      control={control}
                      name="additionalIds"
                      render={({ field }) => (
-                         <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2"> {/* <--- ИЗМЕНЕНИЕ: grid */}
-                             {/* Используем отфильтрованный список */}
+                         <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
                              {filteredAdditionals.length > 0 ? (
-                                 filteredAdditionals.map((additional) => ( // <--- ИЗМЕНЕНИЕ: итерация по filteredAdditionals
+                                 filteredAdditionals.map((additional) => (
                                      <div key={additional.id} className="flex items-center space-x-2">
                                          <Checkbox
                                              id={`additional-${additional.id}`}
@@ -269,15 +252,13 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
                                                  }
                                              }}
                                          />
-                                         {/* Отображение цены как в вашем исходном коде */}
                                          <Label htmlFor={`additional-${additional.id}`} className="cursor-pointer text-sm">
-                                             {additional.name} (+{additional.price} Br) {/* <--- ОСТАВЛЕНО КАК БЫЛО */}
+                                             {additional.name} (+{additional.price} Br)
                                          </Label>
                                      </div>
                                  ))
                             ) : (
-                                 // Сообщение если ничего не найдено
-                                 <p className="text-gray-500 col-span-full">Доп. товары не найдены.</p> // <--- ДОБАВЛЕНО
+                                 <p className="text-gray-500 col-span-full">Доп. товары не найдены.</p>
                             )}
                          </div>
                      )}
@@ -285,8 +266,6 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
                   {errors.additionalIds && <p className="text-red-500 text-sm mt-1">{errors.additionalIds.message}</p>}
              </div>
 
-
-             {/* Кнопки Submit / Cancel (как в вашем коде) */}
             <div className="flex justify-end space-x-2">
                 <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
                     Отмена

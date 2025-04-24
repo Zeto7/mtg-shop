@@ -7,15 +7,22 @@ export const formLoginSchema = z.object({
     password: passwordSchema
 });
 
-export const formRegisterSchema = formLoginSchema.merge(
-    z.object({
-        fullName: z.string().min(2, { message: 'Имя должно содержать не менее 2 символов' }),
-        confirmPassword: passwordSchema
-    }),
-).refine (data => data.password === data.confirmPassword, {
-    message: 'Пароли не совпадают',
-    path: ['confirmPassword'],
-});
+export const formRegisterSchema = z.object({
+    fullName: z.string()
+      .min(2, { message: 'Имя должно содержать минимум 2 символа' })
+      .trim(),
+    email: z.string()
+      .email({ message: 'Введите корректный email' }),
+    password: z.string()
+      .min(8, { message: 'Пароль должен содержать минимум 8 символов' }),
+    confirmPassword: z.string()
+      .min(8, { message: 'Подтверждение пароля обязательно' }),
+  })
+  // Добавляем проверку на совпадение паролей
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Пароли не совпадают",
+    path: ["confirmPassword"],
+  });
 
 export type TFormLoginValues = z.infer<typeof formLoginSchema>;
 export type TFormRegisterValues = z.infer<typeof formRegisterSchema>;
