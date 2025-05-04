@@ -1,15 +1,13 @@
-// /shared/components/shared/email-templates/OrderConfirmationEmail.tsx
-import { Order } from '@prisma/client'; // Импортируем тип Order
-import React from 'react';
-import { CartStateItem } from '@/shared/lib/get-cart-details'; // Используем тип для items
 
-// Определяем тип для распарсенных items (если он отличается от CartStateItem)
-// Возможно, ваш JSON имеет другую структуру, адаптируйте интерфейс
+import { Order } from '@prisma/client';
+import React from 'react';
+import { CartStateItem } from '@/shared/lib/get-cart-details';
+
 interface OrderItemData {
     id: number;
     quantity: number;
     productItemId: number;
-    productItem?: { // Структура из вашего include в createOrder
+    productItem?: {
         id: number;
         price: number;
         amount: number | null;
@@ -21,24 +19,21 @@ interface OrderItemData {
         }
     }
     additionals?: { id: number; name: string; price: number }[];
-    // Добавьте поля, которые реально хранятся в JSON
-    // Если структура проще, упростите интерфейс
 }
 
 
 interface OrderConfirmationEmailProps {
     orderId: number;
     orderDate: Date;
-    totalAmount: number; // Цена в копейках/центах
+    totalAmount: number;
     fullName: string;
-    items: OrderItemData[]; // Используем типизированные items
+    items: OrderItemData[];
     address: string;
     comment?: string;
 }
 
-// Простая функция форматирования валюты для email
 const formatCurrency = (amount: number) => {
-  return (amount / 100).toFixed(2).replace('.', ','); // Формат R$ XX,YY или Br XX,YY
+  return (amount / 100).toFixed(2).replace('.', ',');
 };
 
 const OrderConfirmationEmail: React.FC<OrderConfirmationEmailProps> = ({
@@ -83,11 +78,10 @@ const OrderConfirmationEmail: React.FC<OrderConfirmationEmailProps> = ({
             </thead>
             <tbody>
               {items.map((item) => {
-                 // Получаем данные товара из вложенной структуры (адаптируйте под ваш JSON)
                  const productInfo = item.productItem?.product;
-                 const itemPrice = item.productItem?.price ?? 0; // Цена за вариацию
+                 const itemPrice = item.productItem?.price ?? 0;
                  const itemName = productInfo?.name ?? `Товар #${item.productItemId}`;
-                 const itemTotal = itemPrice * item.quantity; // Без учета допов пока для простоты
+                 const itemTotal = itemPrice * item.quantity;
 
                  return (
                       <tr key={item.id}>
@@ -100,8 +94,6 @@ const OrderConfirmationEmail: React.FC<OrderConfirmationEmailProps> = ({
               })}
             </tbody>
           </table>
-
-           {/* Можно добавить секцию с дополнениями, если нужно */}
 
           <p className="total">Итого к оплате: {formatCurrency(totalAmount)} Br</p>
 

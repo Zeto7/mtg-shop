@@ -1,23 +1,19 @@
-// ФАЙЛ: app/actions/order-actions.ts (или добавьте в actions.ts)
 'use server';
 
 import { prisma } from '@/prisma/prisma-client';
 import { CheckoutFormValues } from "@/shared/components/shared/checkout-components/checkout-form-schema";
-// Импортируем функцию получения сессии и отправки email
 import { getUserSession } from "@/shared/lib/get-user-session";
-import { sendEmail } from "@/shared/lib/send-email"; // <-- Ваша функция отправки
-// Импортируем email-шаблон (создадим на шаге 2)
+import { sendEmail } from "@/shared/lib/send-email";
 import OrderConfirmationEmail from '@/shared/components/shared/email-templates/OrderConfirmationEmail';
 import { OrderStatus, Prisma } from "@prisma/client";
 import { cookies } from "next/headers";
-import React from 'react'; // Для рендеринга шаблона
+import React from 'react';
 
-// Определим тип возвращаемого значения
 type CreateOrderResult = {
     success: boolean;
     message?: string;
     orderId?: number;
-    paymentUrl?: string | null; // Если платежи будут добавлены
+    paymentUrl?: string | null;
 }
 
 export async function createOrder(data: CheckoutFormValues): Promise<CreateOrderResult> {

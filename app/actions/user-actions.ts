@@ -82,7 +82,6 @@ export async function addUserAction(formData: FormData): Promise<ActionResult> {
     }
 }
 
-// --- Action: Обновить Пользователя ---
 export async function updateUserAction(formData: FormData): Promise<ActionResult> {
     const rawData = Object.fromEntries(formData.entries());
      // Приводим id к числу перед валидацией
@@ -101,7 +100,6 @@ export async function updateUserAction(formData: FormData): Promise<ActionResult
     }
 
     try {
-        // Проверяем, не пытается ли админ занять чужой email (если email можно менять)
         const existingUserWithEmail = await prisma.user.findUnique({ where: { email } });
         if (existingUserWithEmail && existingUserWithEmail.id !== id) {
             return { success: false, message: 'Этот email уже используется другим пользователем.' };
@@ -113,8 +111,6 @@ export async function updateUserAction(formData: FormData): Promise<ActionResult
                 email,
                 fullName,
                 role,
-                // Пароль не обновляем этой функцией, или добавить отдельную логику
-                // password: password ? hashSync(password, 10) : undefined,
             },
         });
         revalidatePath('/dashboard');
@@ -162,7 +158,6 @@ export async function getMyOrders(): Promise<{ success: boolean; orders?: Order[
         const orders = await prisma.order.findMany({
             where: { userId: userId },
             orderBy: { createdAt: 'desc' }, // Сначала новые
-            // Можно добавить include, если нужны связанные данные, но для списка обычно нет
         });
 
         return { success: true, orders };
@@ -175,19 +170,16 @@ export async function getMyOrders(): Promise<{ success: boolean; orders?: Order[
 
 export async function getCurrentUserProfile(): Promise<ActionResult> {
     try {
-      // getUserSession возвращает объект user {id, role, name...} или null
       const currentUser = await getUserSession();
   
-      if (!currentUser?.id) { // Проверяем наличие ID у результата getUserSession
+      if (!currentUser?.id) {
         return { success: false, message: "Пользователь не аутентифицирован." };
       }
   
-      const userId = Number(currentUser.id); // Преобразуем ID сессии в число
+      const userId = Number(currentUser.id);
   
-      // Ищем пользователя в БД по этому ID
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        // Выбираем поля, чтобы исключить пароль
         select: {
           id: true, fullName: true, email: true, role: true, provider: true,
           providerId: true, verified: true, createdAt: true, updatedAt: true
@@ -195,12 +187,9 @@ export async function getCurrentUserProfile(): Promise<ActionResult> {
       });
   
       if (!user) {
-        // Если сессия есть, а пользователя в БД нет - это ошибка
         console.error(`User with ID ${userId} found in session but not in DB.`);
         return { success: false, message: "Профиль пользователя не найден в базе данных." };
       }
-  
-      // Возвращаем успех и данные пользователя
       return { success: true, user };
   
     } catch (error) {
@@ -209,7 +198,7 @@ export async function getCurrentUserProfile(): Promise<ActionResult> {
     }
   }
   
-  // --- ДОБАВИТЬ: Обновить профиль ТЕКУЩЕГО пользователя ---
+
   export async function updateMyProfile(data: UpdateProfileData): Promise<ActionResult> {
       // 1. Валидация входных данных
       const validation = updateProfileSchema.safeParse(data);
@@ -221,16 +210,15 @@ export async function getCurrentUserProfile(): Promise<ActionResult> {
       try {
           // 2. Получаем сессию ТЕКУЩЕГО пользователя
           const currentUser = await getUserSession();
-          if (!currentUser?.id) { // Проверяем наличие ID
+          if (!currentUser?.id) {
               return { success: false, message: "Пользователь не аутентифицирован." };
           }
           const userId = Number(currentUser.id);
   
-          // 3. Находим пользователя (для получения старого пароля, если новый не указан - хотя это не нужно, см. ниже)
-          // Достаточно просто убедиться, что пользователь существует, хотя сессия это уже подтверждает.
+          // 3. Находим пользователя
           const findUser = await prisma.user.findUnique({
               where: { id: userId },
-              select: { id: true } // Достаточно выбрать ID для проверки существования
+              select: { id: true }
           });
   
           if (!findUser) {
@@ -239,26 +227,23 @@ export async function getCurrentUserProfile(): Promise<ActionResult> {
   
           // 4. Готовим данные для обновления
           const dataToUpdate: Prisma.UserUpdateInput = {
-              fullName: fullName, // Обновляем имя
+              fullName: fullName,
           };
   
-          // Если передан новый пароль и он не пустой, хешируем и добавляем его
           if (password && password.length > 0) {
               dataToUpdate.password = hashSync(password, 10);
           }
-          // Если password пустой или не передан, поле password не будет в dataToUpdate,
-          // и Prisma его не изменит.
   
           // 5. Обновляем пользователя в БД
           await prisma.user.update({
-              where: { id: userId }, // Обновляем по ID из сессии
+              where: { id: userId },
               data: dataToUpdate,
           });
   
           // 6. Ревалидируем путь к странице профиля
           revalidatePath('/profile');
   
-          return { success: true }; // Возвращаем успех
+          return { success: true };
   
       } catch (error) {
           console.error("Error updating own profile:", error);

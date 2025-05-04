@@ -1,14 +1,10 @@
-// ФАЙЛ: shared/components/shared/checkout-components/checkout-address-form.tsx
 import React from "react";
 import { WhiteBlock } from "../white-block";
-// Input не используется напрямую здесь, если только как часть AdressInput
-// import { Input } from "../../ui/input";
 import { FormTextarea } from "../form-components/form-textarea";
-import { AdressInput } from "../address-input"; // Ваш компонент dadata
+import { AdressInput } from "../address-input";
 import { Controller, useFormContext } from "react-hook-form";
 import { ErrorText } from "../error-text";
-// Импортируем тип DaDataAddressSuggestion
-import { DaDataAddressSuggestion } from "react-dadata"; // <-- ИМПОРТ
+import { DaDataAddressSuggestion } from "react-dadata";
 
 interface Props {
     className?: string;
@@ -24,7 +20,6 @@ export const CheckoutAddressForm: React.FC<Props> = ({ className }) => {
         const addressString = suggestion?.value || '';
         reactHookFormOnChange(addressString);
     };
-    // --- КОНЕЦ НОВОГО ОБРАБОТЧИКА ---
 
     return (
         <WhiteBlock title="3. Адрес доставки" className={className}>

@@ -1,4 +1,3 @@
-// ФАЙЛ: shared/components/shared/address-input.tsx
 import React from 'react';
 import { AddressSuggestions, DaDataAddressSuggestion } from 'react-dadata';
 import 'react-dadata/dist/react-dadata.css';
@@ -7,9 +6,7 @@ interface Props {
   onChange?: (suggestion?: DaDataAddressSuggestion) => void;
   query?: string;
   placeholder?: string;
-  // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
-  "aria-invalid"?: "true" | "false"; // Используем двоеточие : вместо дефиса - и кавычки для имени свойства
-  // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+  "aria-invalid"?: "true" | "false";
 }
 
 const belarusLocationFilter = [{ "country_iso_code": "BY" }];
@@ -18,7 +15,7 @@ export const AdressInput: React.FC<Props> = React.memo(({
     onChange,
     query,
     placeholder = "Введите адрес доставки",
-    "aria-invalid": ariaInvalid // Получаем свойство здесь (имя в кавычках, т.к. содержит дефис)
+    "aria-invalid": ariaInvalid
 }) => {
 
   return (
@@ -30,10 +27,8 @@ export const AdressInput: React.FC<Props> = React.memo(({
       query={query}
       placeholder={placeholder}
       inputProps={{
-          // Передаем атрибут здесь
           "aria-invalid": ariaInvalid
       }}
-      // className="h-12" // Если нужно стилизовать высоту
     />
   );
 });

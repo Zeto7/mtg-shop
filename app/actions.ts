@@ -9,7 +9,7 @@ import { cookies } from "next/headers";
 import { z } from 'zod';
 
 export async function createOrder(data: CheckoutFormValues) {
-    try {
+    try {   
         const cookieStore = await cookies();
         const cartToken = cookieStore.get('cartToken')?.value;
 
@@ -121,7 +121,6 @@ export async function updateUserInfo(body: Prisma.UserUpdateInput) {
 };
 
 
-
 const registerUserInputSchema = z.object({
   email: z.string().email({ message: "Введите корректный email" }),
   fullName: z.string().min(2, { message: "Имя должно содержать минимум 2 символа" }),
@@ -161,9 +160,7 @@ export async function registerUser(input: RegisterUserInputData): Promise<Action
         email: email,
         fullName: fullName,
         password: hashedPassword,
-
         verified: null,
-
         role: UserRole.USER,
       },
     });

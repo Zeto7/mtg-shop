@@ -6,12 +6,15 @@ import { ProductAdminClient } from './product-admin-client';
 import { UserListClient } from './user-list-client';
 import { ProductWithRelations, CategoryData, AdditionalData } from '@/@types/prisma';
 import { SafeUser } from '@/app/actions/user-actions';
+import { Order } from '@prisma/client';
+import { OrderListClient } from '@/shared/components/shared/admin-order-list-client';
 
 interface DashboardTabsClientProps {
     initialProducts: ProductWithRelations[];
     categories: CategoryData[];
     allAdditionals: AdditionalData[];
     initialUsers: SafeUser[];
+    initialOrders: Order[];
 }
 
 export function DashboardTabsClient({
@@ -19,12 +22,14 @@ export function DashboardTabsClient({
     categories,
     allAdditionals,
     initialUsers,
+    initialOrders,
 }: DashboardTabsClientProps) {
     return (
         <Tabs defaultValue="products" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-5">
+            <TabsList className="grid w-full grid-cols-3 mb-5">
                 <TabsTrigger value="products">Товары</TabsTrigger>
                 <TabsTrigger value="users">Пользователи</TabsTrigger>
+                <TabsTrigger value="orders">Заказы</TabsTrigger>
             </TabsList>
 
             <TabsContent value="products">
@@ -36,11 +41,12 @@ export function DashboardTabsClient({
             </TabsContent>
 
             <TabsContent value="users">
-
                 <UserListClient users={initialUsers} />
             </TabsContent>
 
-             {/* TODO : Добавить другие TabsContent для заказов и т.д. */}
+            <TabsContent value="orders">
+                <OrderListClient initialOrders={initialOrders} />
+            </TabsContent>
         </Tabs>
     );
 }
