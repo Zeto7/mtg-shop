@@ -11,7 +11,7 @@ type ReturnProps = {
     addCartItem: (values: CreateCartItemValues) => Promise<void>,
 }
 
-export const useaCart = (): ReturnProps => {
+export const useCart = (): ReturnProps => {
     const cartState = useCartStore((state) => state);
 
     React.useEffect(() => {

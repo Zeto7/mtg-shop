@@ -5,7 +5,7 @@ import { Button } from "../ui/button"
 import React from "react"
 import { cn } from "@/shared/lib/utils"
 import { CartDrawer } from "./cart-drawer"
-import { useaCart } from "@/shared/hooks/use-cart";
+import { useCart } from "@/shared/hooks/use-cart";
 
 interface Props {
     className?: string
@@ -14,7 +14,7 @@ interface Props {
 // TODO : исправить отображение информации на кнопке
 
 export const CartButton: React.FC<Props> = ({className}) => {
-    const {totalAmount, items} = useaCart();
+    const {totalAmount, items} = useCart();
     return (
         <CartDrawer>
             <Button className={cn('group relative rounded-3xl', className)}>

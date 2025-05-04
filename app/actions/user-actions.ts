@@ -1,10 +1,11 @@
-// ФАЙЛ: app/actions/user-actions.ts
 'use server';
 
 import { prisma } from '@/prisma/prisma-client';
 import { Prisma, User, UserRole } from '@prisma/client';
 import { hashSync } from 'bcrypt';
 import { revalidatePath } from 'next/cache';
+import { getUserSession } from '@/shared/lib/get-user-session';
+import { Order } from '@prisma/client';
 import { z } from 'zod';
 export type SafeUser = Omit<User, 'password'>;
 
@@ -12,6 +13,7 @@ type ActionResult = {
   success: boolean;
   message?: string;
   errors?: Record<string, string[] | undefined>;
+  user?: SafeUser;
 };
 
 const userFormSchemaBase = z.object({
@@ -28,6 +30,12 @@ const addUserFormSchema = userFormSchemaBase.extend({
 const updateUserFormSchema = userFormSchemaBase.extend({
   password: z.string().optional(),
 });
+
+const updateProfileSchema = z.object({
+    fullName: z.string().min(2, { message: "Минимум 2 символа" }).trim(),
+    password: z.string().min(8, { message: "Минимум 8 символов" }).optional().or(z.literal('')),
+});
+type UpdateProfileData = z.infer<typeof updateProfileSchema>;
 
 export async function getUsers(): Promise<SafeUser[]> {
     try {
@@ -142,3 +150,118 @@ export async function deleteUserAction(userId: number): Promise<ActionResult> {
         return { success: false, message: 'Ошибка сервера при удалении пользователя.' };
     }
 }
+
+export async function getMyOrders(): Promise<{ success: boolean; orders?: Order[]; message?: string }> {
+    try {
+        const session = await getUserSession();
+        if (!session?.id) {
+            return { success: false, message: "Пользователь не аутентифицирован." };
+        }
+        const userId = Number(session.id);
+
+        const orders = await prisma.order.findMany({
+            where: { userId: userId },
+            orderBy: { createdAt: 'desc' }, // Сначала новые
+            // Можно добавить include, если нужны связанные данные, но для списка обычно нет
+        });
+
+        return { success: true, orders };
+
+    } catch (error) {
+        console.error("Error fetching user orders:", error);
+        return { success: false, message: "Ошибка сервера при получении заказов." };
+    }
+}
+
+export async function getCurrentUserProfile(): Promise<ActionResult> {
+    try {
+      // getUserSession возвращает объект user {id, role, name...} или null
+      const currentUser = await getUserSession();
+  
+      if (!currentUser?.id) { // Проверяем наличие ID у результата getUserSession
+        return { success: false, message: "Пользователь не аутентифицирован." };
+      }
+  
+      const userId = Number(currentUser.id); // Преобразуем ID сессии в число
+  
+      // Ищем пользователя в БД по этому ID
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        // Выбираем поля, чтобы исключить пароль
+        select: {
+          id: true, fullName: true, email: true, role: true, provider: true,
+          providerId: true, verified: true, createdAt: true, updatedAt: true
+        }
+      });
+  
+      if (!user) {
+        // Если сессия есть, а пользователя в БД нет - это ошибка
+        console.error(`User with ID ${userId} found in session but not in DB.`);
+        return { success: false, message: "Профиль пользователя не найден в базе данных." };
+      }
+  
+      // Возвращаем успех и данные пользователя
+      return { success: true, user };
+  
+    } catch (error) {
+      console.error("Error fetching current user profile:", error);
+      return { success: false, message: "Ошибка сервера при получении профиля." };
+    }
+  }
+  
+  // --- ДОБАВИТЬ: Обновить профиль ТЕКУЩЕГО пользователя ---
+  export async function updateMyProfile(data: UpdateProfileData): Promise<ActionResult> {
+      // 1. Валидация входных данных
+      const validation = updateProfileSchema.safeParse(data);
+      if (!validation.success) {
+          return { success: false, message: "Ошибка валидации данных профиля", errors: validation.error.format() }; // Возвращаем ошибки Zod
+      }
+      const { fullName, password } = validation.data;
+  
+      try {
+          // 2. Получаем сессию ТЕКУЩЕГО пользователя
+          const currentUser = await getUserSession();
+          if (!currentUser?.id) { // Проверяем наличие ID
+              return { success: false, message: "Пользователь не аутентифицирован." };
+          }
+          const userId = Number(currentUser.id);
+  
+          // 3. Находим пользователя (для получения старого пароля, если новый не указан - хотя это не нужно, см. ниже)
+          // Достаточно просто убедиться, что пользователь существует, хотя сессия это уже подтверждает.
+          const findUser = await prisma.user.findUnique({
+              where: { id: userId },
+              select: { id: true } // Достаточно выбрать ID для проверки существования
+          });
+  
+          if (!findUser) {
+               return { success: false, message: 'Пользователь для обновления не найден.' };
+          }
+  
+          // 4. Готовим данные для обновления
+          const dataToUpdate: Prisma.UserUpdateInput = {
+              fullName: fullName, // Обновляем имя
+          };
+  
+          // Если передан новый пароль и он не пустой, хешируем и добавляем его
+          if (password && password.length > 0) {
+              dataToUpdate.password = hashSync(password, 10);
+          }
+          // Если password пустой или не передан, поле password не будет в dataToUpdate,
+          // и Prisma его не изменит.
+  
+          // 5. Обновляем пользователя в БД
+          await prisma.user.update({
+              where: { id: userId }, // Обновляем по ID из сессии
+              data: dataToUpdate,
+          });
+  
+          // 6. Ревалидируем путь к странице профиля
+          revalidatePath('/profile');
+  
+          return { success: true }; // Возвращаем успех
+  
+      } catch (error) {
+          console.error("Error updating own profile:", error);
+          return { success: false, message: 'Ошибка сервера при обновлении профиля.' };
+      }
+  }

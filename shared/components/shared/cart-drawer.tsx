@@ -10,11 +10,11 @@ import { getCartItemDetails } from "@/shared/lib/get-cart-item-details"
 import Image from "next/image";
 import { Title } from "./title";
 import { cn } from "@/shared/lib/utils";
-import { useaCart } from "@/shared/hooks/use-cart";
+import { useCart } from "@/shared/hooks/use-cart";
 
     // TODO : починить добавление товаров к корзину
 export const CartDrawer: React.FC<React.PropsWithChildren> = ({ children}) => {
-        const {totalAmount, updateItemQuantity, items, removeCartItem} = useaCart();
+        const {totalAmount, updateItemQuantity, items, removeCartItem} = useCart();
 
 
     const onClickCountButton = (id: number, quantity: number, type: 'plus' | 'minus') => { 
