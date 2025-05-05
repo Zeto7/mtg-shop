@@ -1,4 +1,3 @@
-// ФАЙЛ: app/dashboard/order-list-client.tsx
 'use client';
 
 import React, { useState, useTransition } from 'react';
@@ -57,7 +56,6 @@ function StatusSelector({ orderId, currentStatus }: { orderId: number; currentSt
 
 
 export function OrderListClient({ initialOrders }: OrderListClientProps) {
-    // Используем initialOrders напрямую, revalidatePath обновит их
     const orders = initialOrders;
 
     if (!orders || orders.length === 0) {
@@ -91,13 +89,8 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
                             <TableCell className="text-xs max-w-[200px] truncate" title={order.address}>{order.address}</TableCell> {/* Обрезаем длинный адрес */}
                             <TableCell className="font-semibold whitespace-nowrap">{formatCurrency(order.totalAmount)}</TableCell>
                             <TableCell className="text-center">
-                                {/* Компонент для смены статуса */}
                                 <StatusSelector orderId={order.id} currentStatus={order.status} />
                             </TableCell>
-                             {/* <TableCell className="text-right">
-                                 <Button variant="ghost" size="icon" title="Просмотреть детали">🔍</Button>
-                                 <Button variant="ghost" size="icon" title="Отменить заказ" className="text-red-500">❌</Button>
-                             </TableCell> */}
                         </TableRow>
                     ))}
                 </TableBody>
