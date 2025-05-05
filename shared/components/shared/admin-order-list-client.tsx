@@ -13,7 +13,7 @@ interface OrderListClientProps {
 }
 
 const formatDate = (date: Date | null | undefined) => date ? new Date(date).toLocaleString('ru-RU') : 'N/A';
-const formatCurrency = (amount: number) => (amount / 100).toFixed(2).replace('.', ',') + ' Br';
+const formatCurrency = (amount: number) => (amount).toFixed(2).replace('.', ',') + ' Br';
 
 function StatusSelector({ orderId, currentStatus }: { orderId: number; currentStatus: OrderStatus }) {
     const [isPending, startTransition] = useTransition();

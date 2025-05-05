@@ -1,11 +1,9 @@
-// ФАЙЛ: app/checkout/page.tsx
 "use client";
 
-import React, { useState, useEffect } from "react"; // Добавляем useEffect
-// ... другие импорты ...
+import React, { useState, useEffect } from "react";
 import { CheckoutSidebar, ShippingMethod } from "@/shared/components/shared/checkout-sidebar";
 import { checkoutFormSchema, CheckoutFormValues } from "@/shared/components/shared/checkout-components/checkout-form-schema";
-import { useForm, FormProvider, SubmitHandler } from "react-hook-form"; // Импорт useForm
+import { useForm, FormProvider, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createOrder } from "@/app/actions/order-actions";
 import toast from "react-hot-toast";
@@ -85,7 +83,7 @@ export default function CheckoutPage() {
     };
 
 
-     if (!items || items.length === 0 && !form.formState.isSubmitting) { 
+    if (!items || items.length === 0 && !form.formState.isSubmitting) { 
         return (
             <Container className="mt-10 text-center">
                 <Title text="Ваша корзина пуста" className="mb-4" />
