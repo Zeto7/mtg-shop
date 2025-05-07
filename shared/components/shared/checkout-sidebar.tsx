@@ -40,7 +40,6 @@ export const CheckoutSidebar: React.FC<Props> = ({
                         onValueChange={(value) => onShippingChange(value as ShippingMethod)}
                         className="space-y-3"
                     >
-                        {/* Опция Самовывоз */}
                         <div className="flex items-center space-x-3 p-3 border rounded-md has-[:checked]:border-primary">
                             <RadioGroupItem value="pickup" id="pickup" />
                             <Label htmlFor="pickup" className="cursor-pointer flex flex-col flex-grow">
@@ -48,7 +47,7 @@ export const CheckoutSidebar: React.FC<Props> = ({
                                 <span className="text-xs text-green-600 font-medium">Бесплатно</span>
                             </Label>
                         </div>
-                        {/* Отображение адреса самовывоза */}
+
                         {shippingMethod === 'pickup' && (
                             <div className="text-xs text-gray-600 pl-8 -mt-1 flex items-start">
                                <MapPin className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
@@ -56,7 +55,6 @@ export const CheckoutSidebar: React.FC<Props> = ({
                             </div>
                         )}
 
-                        {/* Опция Доставка */}
                         <div className="flex items-center space-x-3 p-3 border rounded-md has-[:checked]:border-primary">
                             <RadioGroupItem value="delivery" id="delivery" />
                             <Label htmlFor="delivery" className="cursor-pointer flex flex-col flex-grow">

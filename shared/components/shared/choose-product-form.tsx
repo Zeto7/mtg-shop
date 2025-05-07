@@ -13,7 +13,6 @@ interface Props {
 }
 
 export const ChooseProductForm: React.FC<Props> = ({ className, imageUrl, name, description, price, onSubmit }) => {
-    //const textDetails = 'Lorem, ipsum dolor sit amet consectetur adipisicing elit. Fugit, vel quis. Officia consequatur culpa velit repellat nesciunt';
   return (
     <div className={cn(className, 'flex flex-1')}>
         <div className="flex items-center justify-center flex-1 relative w-full">
@@ -23,7 +22,9 @@ export const ChooseProductForm: React.FC<Props> = ({ className, imageUrl, name, 
 
         <div className="w-[490px] bg-[#FCFCFC] p-7">
             <Title text={name} size="md" className="font-extrabold mb-1"/>
-            <p className="text-[#5C6370]">{description}</p>
+            <p className="text-sm text-[#5C6370] mb-4 overflow-hidden break-words flex-grow"> {/* Добавлены классы и flex-grow */}
+                {description || 'Описание отсутствует.'} {/* Добавлен fallback */}
+            </p>
             <Button onClick={() => onSubmit?.()} className="h-[55px] px-10 text-base rounded-[18px] w-full mt-10 bg-[#B22222]">Добавить в корзину за {price} Br</Button>
         </div>
     </div>
