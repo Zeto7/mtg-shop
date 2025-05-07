@@ -4,10 +4,12 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { prisma } from '@/prisma/prisma-client';
 import { ProductWithRelations } from '@/@types/prisma';
+import { Prisma } from '@prisma/client';
 
 const productItemSchema = z.object({
     id: z.number().optional(),
-    amount: z.coerce.number().int().min(0).optional().nullable(),
+    // amount will be 0 (don't show additionals) or 1 (show additionals)
+    amount: z.coerce.number().int().min(0).max(1, "Amount must be 0 or 1").optional().nullable(),
     price: z.coerce.number().int().min(0, 'Item price must be non-negative'),
 });
 
@@ -17,126 +19,98 @@ const productSchemaBase = z.object({
     imageUrl: z.string().url('Invalid image URL').or(z.literal('')),
     price: z.coerce.number().int().min(0, 'Base price must be non-negative'),
     categoryId: z.coerce.number().int().positive('Category is required'),
-    items: z.array(productItemSchema).min(1, 'Product must have at least one variation/item'),
-    additionalIds: z.array(z.coerce.number().int().positive()).optional(),
+    items: z.array(productItemSchema).length(1, 'Product must have exactly one variation.'),
+    additionalIds: z.array(z.coerce.number().int().positive()).optional(), // Keep this optional
 });
 
-const createProductSchema = productSchemaBase; 
+const createProductSchema = productSchemaBase;
 const updateProductSchema = productSchemaBase.extend({
     id: z.coerce.number().int().positive(),
 });
 
-
+// --- getProducts, getCategories, getAllAdditionals remain the same ---
 export async function getProducts(): Promise<ProductWithRelations[]> {
     try {
         return await prisma.product.findMany({
-            include: {
-                category: true,
-                items: true,
-                additionals: true,
-            },
+            include: { category: true, items: true, additionals: true, },
             orderBy: { name: 'asc' },
         });
-    } catch (error) {
-        console.error("Failed to fetch products:", error);
-        return [];
-    }
+    } catch (error) { console.error("Failed to fetch products:", error); return []; }
 }
-
 export async function getCategories() {
-    try {
-        return await prisma.category.findMany({ orderBy: { name: 'asc' } });
-    } catch (error) {
-        console.error("Failed to fetch categories:", error);
-        return [];
-    }
+    try { return await prisma.category.findMany({ orderBy: { name: 'asc' } }); }
+    catch (error) { console.error("Failed to fetch categories:", error); return []; }
+}
+export async function getAllAdditionals() {
+    try { return await prisma.additional.findMany({ orderBy: { name: 'asc' } }); }
+    catch (error) { console.error("Failed to fetch additionals:", error); return []; }
 }
 
-export async function getAllAdditionals() {
-    try {
-        return await prisma.additional.findMany({ orderBy: { name: 'asc' } });
-    } catch (error) {
-        console.error("Failed to fetch additionals:", error);
-        return [];
-    }
-}
 
 function parseFormData(formData: FormData) {
     const rawData = Object.fromEntries(formData.entries());
-    let parsedData = { ...rawData };
+    let parsedData: any = { ...rawData };
 
     if (rawData.items && typeof rawData.items === 'string') {
-        try {
-            parsedData.items = JSON.parse(rawData.items);
-        } catch (e) {
-            console.error("Failed to parse items JSON:", e);
-             parsedData.items = null;
-        }
-    } else if (!rawData.items) {
-         parsedData.items = [];
-    }
-
+        try { parsedData.items = JSON.parse(rawData.items); }
+        catch (e) { console.error("Failed to parse items JSON:", e); parsedData.items = null; }
+    } else if (!rawData.items) { parsedData.items = []; }
 
     if (rawData.additionalIds && typeof rawData.additionalIds === 'string') {
         try {
-             const ids = JSON.parse(rawData.additionalIds);
-             if(Array.isArray(ids) && ids.every(id => typeof id === 'number')) {
-                 parsedData.additionalIds = ids;
-             } else {
-                 parsedData.additionalIds = null;
-             }
-        } catch (e) {
-            console.error("Failed to parse additionalIds JSON:", e);
-             parsedData.additionalIds = null;
-        }
-    } else if (!rawData.additionalIds) {
-        parsedData.additionalIds = [];
-    }
+            const ids = JSON.parse(rawData.additionalIds);
+            if (Array.isArray(ids) && ids.every(id => typeof id === 'number')) {
+                parsedData.additionalIds = ids;
+            } else { parsedData.additionalIds = null; }
+        } catch (e) { console.error("Failed to parse additionalIds JSON:", e); parsedData.additionalIds = null; }
+    } else if (!rawData.additionalIds) { parsedData.additionalIds = []; }
 
-
-    // Приводим числовые поля к числам перед валидацией Zod
     if (rawData.id) parsedData.id = parseInt(rawData.id as string, 10);
     if (rawData.price) parsedData.price = parseInt(rawData.price as string, 10);
     if (rawData.categoryId) parsedData.categoryId = parseInt(rawData.categoryId as string, 10);
-     if (parsedData.items && Array.isArray(parsedData.items)) {
-         parsedData.items = parsedData.items.map((item: any) => ({
-             ...item,
-             id: item.id ? parseInt(item.id, 10) : undefined,
-             price: item.price ? parseInt(item.price as string, 10) : 0,
-             amount: item.amount ? parseInt(item.amount as string, 10) : null,
-         }));
-     }
 
+    if (parsedData.items && Array.isArray(parsedData.items)) {
+        parsedData.items = parsedData.items.map((item: any) => ({
+            id: item.id !== undefined ? parseInt(String(item.id), 10) : undefined,
+            price: item.price !== undefined ? parseInt(String(item.price), 10) : 0,
+            // Ensure amount is parsed correctly, defaulting to 0 if not a valid number for the toggle
+            amount: (item.amount !== undefined && item.amount !== null && !isNaN(parseInt(String(item.amount), 10)))
+                    ? parseInt(String(item.amount), 10)
+                    : 0, // Default to 0 if invalid or null
+        }));
+    }
     return parsedData;
 }
 
-
 export async function addProductAction(formData: FormData) {
     const parsedData = parseFormData(formData);
-
     const validationResult = createProductSchema.safeParse(parsedData);
 
     if (!validationResult.success) {
-        console.error("Validation failed (create):", validationResult.error.errors);
+        console.error("Validation failed (create):", validationResult.error.format());
         return { success: false, errors: validationResult.error.flatten().fieldErrors };
     }
 
     const { items, additionalIds, ...productData } = validationResult.data;
+    const showAdditionals = items[0].amount === 1; // Check the flag from the single item
 
     try {
         const newProduct = await prisma.product.create({
             data: {
                 ...productData,
                 imageUrl: productData.imageUrl || '',
-                description: productData.description,
+                description: productData.description || null,
                 items: {
                     create: items.map(item => ({
                         price: item.price,
-                        amount: item.amount,
+                        amount: item.amount ?? 0, // Use the 0/1 flag
                     })),
                 },
+                // Only connect additionals if the flag is true and there are IDs
                 additionals: {
-                    connect: additionalIds?.map(id => ({ id })) ?? [],
+                    connect: (showAdditionals && additionalIds && additionalIds.length > 0)
+                        ? additionalIds.map(id => ({ id }))
+                        : [],
                 },
             },
             include: { items: true, additionals: true, category: true },
@@ -151,15 +125,16 @@ export async function addProductAction(formData: FormData) {
 
 export async function updateProductAction(formData: FormData) {
     const parsedData = parseFormData(formData);
-
     const validationResult = updateProductSchema.safeParse(parsedData);
 
     if (!validationResult.success) {
-        console.error("Validation failed (update):", validationResult.error.errors);
+        console.error("Validation failed (update):", validationResult.error.format());
         return { success: false, errors: validationResult.error.flatten().fieldErrors };
     }
 
     const { id, items, additionalIds, ...productData } = validationResult.data;
+    const submittedItem = items[0];
+    const showAdditionals = submittedItem.amount === 1; // Check the flag
 
     try {
         const existingProduct = await prisma.product.findUnique({
@@ -167,46 +142,36 @@ export async function updateProductAction(formData: FormData) {
             include: { items: true }
         });
 
-        if (!existingProduct) {
-            return { success: false, message: "Product not found." };
+        if (!existingProduct) return { success: false, message: "Product not found." };
+
+        const itemOperations: any = {};
+        if (existingProduct.items.length > 0) {
+            itemOperations.update = [{
+                where: { id: existingProduct.items[0].id },
+                data: { price: submittedItem.price, amount: submittedItem.amount ?? 0 },
+            }];
+            if (existingProduct.items.length > 1) {
+                 itemOperations.deleteMany = { id: { in: existingProduct.items.slice(1).map(item => item.id) } };
+            }
+        } else {
+            itemOperations.create = [{ price: submittedItem.price, amount: submittedItem.amount ?? 0 }];
         }
-
-        const existingItemIds = existingProduct.items.map(item => item.id);
-        const submittedItemIds = items.map(item => item.id).filter(itemId => !!itemId);
-
-        const itemIdsToDelete = existingItemIds.filter(existingId => !submittedItemIds.includes(existingId));
-        const itemsToCreate = items.filter(item => !item.id); // Новые, без ID
-        const itemsToUpdate = items.filter(item => item.id && existingItemIds.includes(item.id));
 
         const updatedProduct = await prisma.product.update({
             where: { id },
             data: {
                 ...productData,
                 imageUrl: productData.imageUrl || '',
-                description: productData.description,
-                items: {
-                     // Удаляем те, что не пришли в запросе
-                     deleteMany: itemIdsToDelete.length > 0 ? { id: { in: itemIdsToDelete } } : undefined,
-                     // Создаем новые
-                     create: itemsToCreate.map(item => ({
-                         price: item.price,
-                         amount: item.amount,
-                     })),
-                     // Обновляем существующие
-                     update: itemsToUpdate.map(item => ({
-                         where: { id: item.id },
-                         data: {
-                             price: item.price,
-                             amount: item.amount,
-                         },
-                     })),
-                },
+                description: productData.description || null,
+                items: itemOperations,
+                // Only set additionals if the flag is true and there are IDs, otherwise disconnect all
                 additionals: {
-                    // Заменяем все связи на новый набор ID
-                    set: additionalIds?.map(addId => ({ id: addId })) ?? [],
+                    set: (showAdditionals && additionalIds && additionalIds.length > 0)
+                        ? additionalIds.map(addId => ({ id: addId }))
+                        : [],
                 },
             },
-            include: { items: true, additionals: true, category: true }, // Возвращаем с связями
+            include: { items: true, additionals: true, category: true },
         });
 
         revalidatePath('/dashboard');
@@ -218,27 +183,17 @@ export async function updateProductAction(formData: FormData) {
     }
 }
 
-
+// --- deleteProductAction remains the same ---
 export async function deleteProductAction(productId: number) {
-    if (!productId) {
-        return { success: false, message: "Product ID is required." };
-    }
-
+    if (!productId) return { success: false, message: "Product ID is required." };
     try {
-        await prisma.product.delete({
-            where: { id: productId },
-        });
-        revalidatePath('/dashboard');
-        return { success: true };
+        await prisma.product.delete({ where: { id: productId }, });
+        revalidatePath('/dashboard'); return { success: true };
     } catch (error) {
         console.error("Failed to delete product:", error);
          if (error instanceof Prisma.PrismaClientKnownRequestError) {
-             if (error.code === 'P2003') {
-                 return { success: false, message: "Cannot delete product. It might be referenced elsewhere." };
-             }
-              if (error.code === 'P2025') {
-                 return { success: false, message: "Product not found." };
-             }
+             if (error.code === 'P2003') return { success: false, message: "Cannot delete product. It might be referenced in orders or elsewhere." };
+             if (error.code === 'P2025') return { success: false, message: "Product not found." };
          }
         return { success: false, message: "Failed to delete product." };
     }
