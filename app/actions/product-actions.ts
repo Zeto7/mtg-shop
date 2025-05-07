@@ -6,7 +6,6 @@ import { prisma } from '@/prisma/prisma-client';
 import { ProductWithRelations } from '@/@types/prisma';
 
 const productItemSchema = z.object({
-    // id не нужен для создания, но может быть нужен для обновления/удаления
     id: z.number().optional(),
     amount: z.coerce.number().int().min(0).optional().nullable(),
     price: z.coerce.number().int().min(0, 'Item price must be non-negative'),
@@ -22,15 +21,11 @@ const productSchemaBase = z.object({
     additionalIds: z.array(z.coerce.number().int().positive()).optional(),
 });
 
-const createProductSchema = productSchemaBase; // ID нет при создании
-
+const createProductSchema = productSchemaBase; 
 const updateProductSchema = productSchemaBase.extend({
-    id: z.coerce.number().int().positive(), // ID обязателен для обновления
-    // В items для обновления могут быть id существующих items
+    id: z.coerce.number().int().positive(),
 });
 
-
-// Функции для получения данных
 
 export async function getProducts(): Promise<ProductWithRelations[]> {
     try {
@@ -66,12 +61,10 @@ export async function getAllAdditionals() {
     }
 }
 
-// Распарсить данные формы, включая JSON строки для items и additionals
 function parseFormData(formData: FormData) {
     const rawData = Object.fromEntries(formData.entries());
     let parsedData = { ...rawData };
 
-    // Парсим items (если передается как JSON строка)
     if (rawData.items && typeof rawData.items === 'string') {
         try {
             parsedData.items = JSON.parse(rawData.items);
@@ -84,11 +77,9 @@ function parseFormData(formData: FormData) {
     }
 
 
-    // Парсим additionalIds (если передается как JSON строка)
     if (rawData.additionalIds && typeof rawData.additionalIds === 'string') {
         try {
              const ids = JSON.parse(rawData.additionalIds);
-             // Убедимся, что это массив чисел
              if(Array.isArray(ids) && ids.every(id => typeof id === 'number')) {
                  parsedData.additionalIds = ids;
              } else {
@@ -99,7 +90,7 @@ function parseFormData(formData: FormData) {
              parsedData.additionalIds = null;
         }
     } else if (!rawData.additionalIds) {
-        parsedData.additionalIds = []; // Если не передано, считаем пустым массивом
+        parsedData.additionalIds = [];
     }
 
 
@@ -136,7 +127,7 @@ export async function addProductAction(formData: FormData) {
         const newProduct = await prisma.product.create({
             data: {
                 ...productData,
-                imageUrl: productData.imageUrl || '', // Prisma ожидает строку, не null по схеме
+                imageUrl: productData.imageUrl || '',
                 description: productData.description,
                 items: {
                     create: items.map(item => ({
@@ -145,11 +136,10 @@ export async function addProductAction(formData: FormData) {
                     })),
                 },
                 additionals: {
-                    // Связываем с существующими Additional по их ID
                     connect: additionalIds?.map(id => ({ id })) ?? [],
                 },
             },
-            include: { items: true, additionals: true, category: true }, // Возвращаем с связями
+            include: { items: true, additionals: true, category: true },
         });
         revalidatePath('/dashboard');
         return { success: true, product: newProduct };
@@ -172,11 +162,6 @@ export async function updateProductAction(formData: FormData) {
     const { id, items, additionalIds, ...productData } = validationResult.data;
 
     try {
-        // Логика обновления items сложнее.
-        // Простой вариант: удалить старые, создать новые.
-        // Сложный: найти какие создать, какие обновить, какие удалить.
-        // Используем сложный вариант с upsert/delete для items.
-
         const existingProduct = await prisma.product.findUnique({
             where: { id },
             include: { items: true }
@@ -187,11 +172,11 @@ export async function updateProductAction(formData: FormData) {
         }
 
         const existingItemIds = existingProduct.items.map(item => item.id);
-        const submittedItemIds = items.map(item => item.id).filter(itemId => !!itemId); // ID из формы
+        const submittedItemIds = items.map(item => item.id).filter(itemId => !!itemId);
 
         const itemIdsToDelete = existingItemIds.filter(existingId => !submittedItemIds.includes(existingId));
         const itemsToCreate = items.filter(item => !item.id); // Новые, без ID
-        const itemsToUpdate = items.filter(item => item.id && existingItemIds.includes(item.id)); // Существующие для обновления
+        const itemsToUpdate = items.filter(item => item.id && existingItemIds.includes(item.id));
 
         const updatedProduct = await prisma.product.update({
             where: { id },
@@ -225,7 +210,7 @@ export async function updateProductAction(formData: FormData) {
         });
 
         revalidatePath('/dashboard');
-        revalidatePath(`/products/${id}`); // Если есть страница деталей
+        revalidatePath(`/products/${id}`);
         return { success: true, product: updatedProduct };
     } catch (error) {
         console.error("Failed to update product:", error);
@@ -248,10 +233,10 @@ export async function deleteProductAction(productId: number) {
     } catch (error) {
         console.error("Failed to delete product:", error);
          if (error instanceof Prisma.PrismaClientKnownRequestError) {
-             if (error.code === 'P2003') { // Foreign key constraint failed
+             if (error.code === 'P2003') {
                  return { success: false, message: "Cannot delete product. It might be referenced elsewhere." };
              }
-              if (error.code === 'P2025') { // Record to delete not found
+              if (error.code === 'P2025') {
                  return { success: false, message: "Product not found." };
              }
          }

@@ -157,7 +157,7 @@ export async function getMyOrders(): Promise<{ success: boolean; orders?: Order[
 
         const orders = await prisma.order.findMany({
             where: { userId: userId },
-            orderBy: { createdAt: 'desc' }, // Сначала новые
+            orderBy: { createdAt: 'desc' },
         });
 
         return { success: true, orders };
@@ -203,7 +203,7 @@ export async function getCurrentUserProfile(): Promise<ActionResult> {
       // 1. Валидация входных данных
       const validation = updateProfileSchema.safeParse(data);
       if (!validation.success) {
-          return { success: false, message: "Ошибка валидации данных профиля", errors: validation.error.format() }; // Возвращаем ошибки Zod
+          return { success: false, message: "Ошибка валидации данных профиля", errors: validation.error.format() }; 
       }
       const { fullName, password } = validation.data;
   

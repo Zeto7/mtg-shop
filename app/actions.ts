@@ -3,47 +3,74 @@
 import { prisma } from '@/prisma/prisma-client';
 import { CheckoutFormValues } from "@/shared/components/shared/checkout-components/checkout-form-schema";
 import { getUserSession } from "@/shared/lib/get-user-session";
+import { sendEmail } from '@/shared/lib/send-email';
 import { OrderStatus, Prisma, UserRole } from "@prisma/client";
 import { hashSync } from "bcrypt"; 
 import { cookies } from "next/headers";
 import { z } from 'zod';
 
-export async function createOrder(data: CheckoutFormValues) {
-    try {   
-        const cookieStore = await cookies();
-        const cartToken = cookieStore.get('cartToken')?.value;
+type CreateOrderResult = {
+    success: boolean;
+    message?: string;
+    orderId?: number;
+};
 
-        if (!cartToken) {
-            throw new Error('Cart token not found');
+interface OrderJsonItem {
+    id: number;
+    quantity: number;
+    productItemId: number;
+    productItem?: {
+        id: number;
+        price: number;
+        productId: number;
+        product?: {
+            id: number;
+            name: string;
+            imageUrl?: string;
         }
+    }
+    additionals?: { id: number; name: string; price: number }[];
+}
 
+export async function createOrder(data: CheckoutFormValues): Promise<CreateOrderResult> {
+    const cookieStore = cookies();
+    const cartToken = cookieStore.get('cartToken')?.value;
+    const session = await getUserSession();
+    const userId = session?.id ? Number(session.id) : null;
+
+    if (!userId) { return { success: false, message: 'Для оформления заказа необходимо войти в аккаунт.' }; }
+    if (!cartToken) { return { success: false, message: 'Токен корзины не найден' }; }
+
+    try {
+        // 1. Находим корзину (include можно упростить, если items не нужны для email)
         const userCart = await prisma.cart.findFirst({
+            where: { token: cartToken },
             include: {
-                user: true,
                 items: {
                     include: {
                         additionals: true,
                         productItem: {
                             include: {
-                                product: true,
-                            },
-                        },
-                    },
-                },
-            },
-            where: {
-                token: cartToken,
+                                product: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        imageUrl: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             },
         });
+        
 
-        if (!userCart) {
-            throw new Error('Cart not found');
+        if (!userCart || userCart.items.length === 0) {
+             return { success: false, message: userCart ? 'Корзина пуста' : 'Корзина не найдена' };
         }
 
-        if (userCart?.totalAmount === 0) {
-            throw new Error('Cart is empty');
-        }
-
+        // 2. Создаем заказ
         const order = await prisma.order.create({
             data: {
                 token: cartToken,
@@ -55,24 +82,39 @@ export async function createOrder(data: CheckoutFormValues) {
                 totalAmount: userCart.totalAmount,
                 status: OrderStatus.PENDING,
                 items: JSON.stringify(userCart.items),
-                userId: userCart.userId ?? undefined,
+                userId: userId,
             },
         });
 
-        await prisma.cart.update({
-            where: { id: userCart.id },
-            data: { totalAmount: 0 }
-        });
+        // --- 3. ПРОСТАЯ ОТПРАВКА EMAIL ---
+        try {
+            console.log(`Attempting simple email for order #${order.id}`);
+            await sendEmail(
+                "gleb.by2005@gmail.com", // <-- Ваш email
+                `[MTG Shop] Заказ #${order.id} оформлен`, // Простая тема
+                `Спасибо за покупку! Ваш заказ #${order.id} принят в обработку.` // <-- Простое текстовое сообщение
+            );
+            console.log(`Simple email potentially sent for order ${order.id}.`);
+        } catch (emailError) {
+            console.error(`Failed to send simple email for order ${order.id}:`, emailError);
+        }
+        // --- КОНЕЦ ОТПРАВКИ EMAIL ---
 
-        await prisma.cartItem.deleteMany({
-            where: { cartId: userCart.id },
-        });
 
+        // 4. Очистка корзины
+        try {
+            await prisma.cart.update({ where: { id: userCart.id }, data: { totalAmount: 0, items: { deleteMany: {} } } });
+            cookieStore.delete('cartToken');
+        } catch (cartError) { console.error(`Failed to clear cart ID ${userCart.id}`, cartError); }
+
+        // 5. Возвращаем успех
         return { success: true, orderId: order.id };
 
     } catch (error) {
-        console.error('[CREATE_ORDER] Server error', error);
-        return { success: false, message: 'Не удалось создать заказ.' };
+        console.error('[CREATE_ORDER SIMPLIFIED] Server error', error);
+        let message = 'Не удалось создать заказ.';
+        if (error instanceof Error) message = error.message;
+        return { success: false, message };
     }
 }
 

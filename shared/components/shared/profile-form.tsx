@@ -16,7 +16,6 @@ import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 
 export const ProfileForm: React.FC = () => {
-
     const [profileData, setProfileData] = useState<SafeUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -33,7 +32,7 @@ export const ProfileForm: React.FC = () => {
         },
         mode: 'onBlur',
     });
-    const { reset, handleSubmit, formState, register } = form;
+    const { reset, handleSubmit, formState } = form;
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -68,16 +67,16 @@ export const ProfileForm: React.FC = () => {
         } else if (sessionStatus === 'unauthenticated') {
             setError("Вы не авторизованы для просмотра этой страницы.");
             setIsLoading(false);
-            // import { useRouter } from 'next/navigation';
-            // const router = useRouter(); router.push('/');
         }
     }, [sessionStatus, reset]);
 
     const onSubmit: SubmitHandler<TFormRegisterValues> = async (formData) => {
-         const dataToUpdate = {
-             fullName: formData.fullName,
-             ...(formData.password && { password: formData.password }),
-         };
+        const dataToUpdate: { fullName: string; password?: string } = {
+            fullName: formData.fullName,
+        };
+        if (formData.password && formData.password.length > 0) {
+            dataToUpdate.password = formData.password;
+        }
 
         try {
             const result = await updateMyProfile(dataToUpdate);
@@ -87,7 +86,7 @@ export const ProfileForm: React.FC = () => {
                 setProfileData(prev => prev ? { ...prev, fullName: formData.fullName } : null);
                 reset({ ...formData, password: '', confirmPassword: '' });
             } else {
-                 toast.error(result.message || 'Ошибка при обновлении данных', { icon: '❌' });
+                toast.error(result.message || 'Ошибка при обновлении данных', { icon: '❌' });
             }
         } catch (error) {
             console.error("Error updating profile:", error);
@@ -110,47 +109,51 @@ export const ProfileForm: React.FC = () => {
     if (error || !profileData) {
         return (
             <Container className='my-10'>
-                 <div className="p-4 text-center border border-red-300 bg-red-50 rounded-md">
-                     <p className="font-medium text-red-700">{error || 'Не удалось загрузить профиль или вы не авторизованы.'}</p>
-                      {sessionStatus === 'unauthenticated' && (
-                          <Button onClick={() => {/* Открыть модалку логина */}} className="mt-4">Войти</Button>
-                      )}
-                 </div>
+                <div className="p-4 text-center border border-red-300 bg-red-50 rounded-md">
+                    <p className="font-medium text-red-700">{error || 'Не удалось загрузить профиль или вы не авторизованы.'}</p>
+                    {sessionStatus === 'unauthenticated' && (
+                        <Button onClick={() => {
+                        }} className="mt-4">Войти</Button>
+                    )}
+                </div>
             </Container>
         );
     }
 
     return (
-        <Container className='my-10 space-y-10'>
-             <div>
-                 <Title text={`Личные данные | #${profileData.id}`} size="md" className="font-bold" />
-                 <FormProvider {...form}>
-                     <form noValidate className="flex flex-col gap-5 w-full max-w-md mt-6" onSubmit={handleSubmit(onSubmit)}>
-                          <div className="space-y-1">
-                             <Label htmlFor="profile-email">E-Mail</Label>
-                             <Input id="profile-email" readOnly disabled value={profileData.email || ''} />
-                          </div>
+        <Container className='my-10'>
+            <div className="flex flex-col lg:flex-row lg:gap-8 xl:gap-12">
+                <div className="lg:w-1/3 xl:w-2/5 mb-10 lg:mb-0">
+                    <Title text={`Личные данные | #${profileData.id}`} size="md" className="font-bold" />
+                    <FormProvider {...form}>
+                        <form noValidate className="flex flex-col gap-5 w-full max-w-md mt-6" onSubmit={handleSubmit(onSubmit)}>
+                            <div className="space-y-1">
+                                <Label htmlFor="profile-email">E-Mail</Label>
+                                <Input id="profile-email" readOnly disabled value={profileData.email || ''} className="bg-gray-100 cursor-not-allowed" />
+                            </div>
 
-                          <FormInput name="fullName" label="Полное имя" required />
-                          <FormInput name="password" type="password" label="Новый пароль (оставьте пустым, чтобы не менять)" />
-                          <FormInput name="confirmPassword" type="password" label="Повторите новый пароль" />
+                            <FormInput name="fullName" label="Полное имя" required />
+                            <FormInput name="password" type="password" label="Новый пароль (оставьте пустым, чтобы не менять)" />
+                            <FormInput name="confirmPassword" type="password" label="Повторите новый пароль" />
 
-                         <div className="flex flex-col sm:flex-row gap-3 mt-6">
-                            <Button className="flex-1 h-11" type="submit" disabled={formState.isSubmitting || !formState.isDirty}>
-                                {formState.isSubmitting ? 'Сохранение...' : 'Сохранить'}
-                            </Button>
-                            <Button className="flex-1 h-11" onClick={onClickSignOut} variant="secondary" disabled={formState.isSubmitting} type="button">
-                                Выйти
-                            </Button>
-                         </div>
-                     </form>
-                 </FormProvider>
-             </div>
+                            <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                                <Button className="flex-1 h-11" type="submit" disabled={formState.isSubmitting || !formState.isDirty || !formState.isValid}>
+                                    {formState.isSubmitting ? 'Сохранение...' : 'Сохранить'}
+                                </Button>
+                                <Button className="flex-1 h-11" onClick={onClickSignOut} variant="secondary" disabled={formState.isSubmitting} type="button">
+                                    Выйти
+                                </Button>
+                            </div>
+                        </form>
+                    </FormProvider>
+                </div>
 
-             <div className="border-t pt-10">
-                 <Title text="История заказов" size="md" className="font-bold mb-4" />
-                 <OrderHistoryList />
-             </div>
+                <div className="lg:w-2/3 xl:w-3/5">
+                    <Title text="История заказов" size="md" className="font-bold mb-6" />
+                    <OrderHistoryList />
+                </div>
+
+            </div>
         </Container>
     );
 };

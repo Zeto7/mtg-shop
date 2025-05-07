@@ -5,7 +5,7 @@ import { CheckoutSidebar, ShippingMethod } from "@/shared/components/shared/chec
 import { checkoutFormSchema, CheckoutFormValues } from "@/shared/components/shared/checkout-components/checkout-form-schema";
 import { useForm, FormProvider, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createOrder } from "@/app/actions/order-actions";
+import { createOrder } from "@/app/actions";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { Button } from "@/shared/components/ui/button";
@@ -50,6 +50,7 @@ export default function CheckoutPage() {
                  address: data.address ?? '',
                  comment: data.comment,
             };
+
             const result = await createOrder(orderData);
 
             if (result.success && result.orderId) {
