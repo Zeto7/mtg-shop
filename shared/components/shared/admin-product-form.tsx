@@ -60,10 +60,7 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
                     price: product.items[0].price ?? product.price ?? 0,
                     amount: product.items[0].amount === 1 ? 1 : 0,
                 }
-                : {
-                    price: product?.price ?? 0,
-                    amount: 0
-                }
+                : { price: product?.price ?? 0, amount: 0 }
             ],
             additionalIds: product?.additionals?.map(add => add.id) ?? [],
         },
@@ -82,7 +79,6 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
     const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
         setIsSubmitting(true);
         const formData = new FormData();
-
         const finalData = {
             ...data,
             price: data.items[0].price,
@@ -105,7 +101,6 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
             } else {
                 result = await addProductAction(formData);
             }
-
             if (result.success) {
                 toast.success(`Товар ${isEditMode ? 'обновлен' : 'добавлен'} успешно!`);
                 const productFromResult = result.product;
@@ -126,19 +121,20 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
             } else {
                 if (result.errors) {
                     Object.entries(result.errors).forEach(([field, messages]) => {
-                        if (field === 'price' && messages) {
-                            toast.error(`Цена: ${(messages as string[]).join(', ')}`);
-                        } else if (field === 'items' && typeof messages === 'object' && !Array.isArray(messages)) {
-                             Object.entries(messages as Record<string, any[]>).forEach(([index, itemMessagesObj]) => {
-                                if (itemMessagesObj && typeof itemMessagesObj === 'object') {
-                                    const itemMessages = itemMessagesObj as unknown as Record<string, string[]>;
-                                    if(itemMessages.price) {
-                                        toast.error(`Цена (вариация): ${itemMessages.price.join(', ')}`);
+                        if (messages) {
+                            if (field === 'price' && messages) {
+                                toast.error(`Цена: ${(messages as string[]).join(', ')}`);
+                            } else if (field === 'items' && typeof messages === 'object' && !Array.isArray(messages)) {
+                                 Object.entries(messages as Record<string, any[]>).forEach(([index, itemMessagesObj]) => {
+                                    if (itemMessagesObj && typeof itemMessagesObj === 'object') {
+                                        const itemMessages = itemMessagesObj as unknown as Record<string, string[]>;
+                                        if(itemMessages.price) toast.error(`Цена (вариация): ${itemMessages.price.join(', ')}`);
+                                        if(itemMessages.amount) toast.error(`Настройка доп. товаров: ${itemMessages.amount.join(', ')}`);
                                     }
-                                }
-                             });
-                        } else if (messages) {
-                           toast.error(`${field}: ${(messages as string[]).join(', ')}`);
+                                 });
+                            } else {
+                               toast.error(`${field}: ${(messages as string[]).join(', ')}`);
+                            }
                         }
                     });
                 } else {
@@ -160,12 +156,27 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
                 <Input id="name" {...register('name')} aria-invalid={errors.name ? "true" : "false"} />
                 {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
             </div>
+
+            <div>
+                <Label htmlFor="items.0.price">Цена</Label>
+                <Input
+                    id="items.0.price"
+                    type="number"
+                    step="any"
+                    {...register(`items.0.price`)}
+                    aria-invalid={errors.items?.[0]?.price ? "true" : "false"}
+                />
+                {errors.items?.[0]?.price && <p className="text-red-500 text-sm mt-1">{errors.items[0].price.message}</p>}
+                {/* @ts-ignore */}
+                {errors.price && <p className="text-red-500 text-sm mt-1">{(errors.price as any).message}</p>}
+            </div>
+
             <Controller
                 control={control}
                 name="categoryId"
                 render={({ field }) => (
                     <div>
-                        <Label htmlFor="categoryId">Категория: </Label>
+                        <Label htmlFor="categoryId">Категория</Label>
                         <Select
                             onValueChange={(value) => field.onChange(parseInt(value, 10))}
                             defaultValue={field.value?.toString()}
@@ -186,59 +197,45 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
                     </div>
                 )}
             />
+
             <div>
-                <Label htmlFor="imageUrl">URL изображения:</Label>
+                <Label htmlFor="imageUrl">URL изображения</Label>
                 <Input id="imageUrl" {...register('imageUrl')} aria-invalid={errors.imageUrl ? "true" : "false"} />
                 {errors.imageUrl && <p className="text-red-500 text-sm mt-1">{errors.imageUrl.message}</p>}
             </div>
+
             <div>
-                <Label htmlFor="description">Описание:</Label>
+                <Label htmlFor="description">Описание</Label>
                 <Textarea id="description" {...register('description')} />
             </div>
 
-            <div className="space-y-4 border p-4 rounded">
-                <Label className="text-lg font-medium">Вариация продукта</Label>
-                <div className="border-b pb-4 space-y-3">
-                    {watch('items.0.id') !== undefined && <input type="hidden" {...register(`items.0.id`)} />}
-                    <div>
-                        <Label htmlFor="items.0.price">Цена</Label>
-                        <Input
-                            id="items.0.price"
-                            type="number"
-                            step="any"
-                            {...register(`items.0.price`)}
-                            aria-invalid={errors.items?.[0]?.price ? "true" : "false"}
-                        />
-                        {errors.items?.[0]?.price && <p className="text-red-500 text-sm mt-1">{errors.items[0].price.message}</p>}
-                        {/* @ts-ignore because 'price' is not in ProductFormData but might come from server errors */}
-                        {errors.price && <p className="text-red-500 text-sm mt-1">{(errors.price as any).message}</p>}
+            <div className="space-y-2 border p-4 rounded">
+                <Label className="text-lg font-medium">Дополнительные товары</Label>
+                {watch('items.0.id') !== undefined && <input type="hidden" {...register(`items.0.id`)} />}
 
-                    </div>
-
-                    <div className="flex items-center space-x-2 pt-2">
-                        <Controller
-                            name="items.0.amount"
-                            control={control}
-                            render={({ field }) => (
-                                <Switch
-                                    id="show-additionals-toggle"
-                                    checked={field.value === 1}
-                                    onCheckedChange={(checked) => {
-                                        const newValue = checked ? 1 : 0;
-                                        field.onChange(newValue);
-                                        if (!checked) {
-                                            setValue('additionalIds', []);
-                                        }
-                                    }}
-                                />
-                            )}
-                        />
-                        <Label htmlFor="show-additionals-toggle" className="cursor-pointer">
-                            Добавить доп. товары на карточку?
-                        </Label>
-                    </div>
-                    {errors.items?.[0]?.amount && <p className="text-red-500 text-sm mt-1">{errors.items[0].amount.message}</p>}
+                <div className="flex items-center space-x-2 pt-1">
+                    <Controller
+                        name="items.0.amount"
+                        control={control}
+                        render={({ field }) => (
+                            <Switch
+                                id="show-additionals-toggle"
+                                checked={field.value === 1}
+                                onCheckedChange={(checked) => {
+                                    const newValue = checked ? 1 : 0;
+                                    field.onChange(newValue);
+                                    if (!checked) {
+                                        setValue('additionalIds', []);
+                                    }
+                                }}
+                            />
+                        )}
+                    />
+                    <Label htmlFor="show-additionals-toggle" className="cursor-pointer">
+                        Добавить доп. товары на карточку?
+                    </Label>
                 </div>
+                {errors.items?.[0]?.amount && <p className="text-red-500 text-sm mt-1">{errors.items[0].amount.message}</p>}
                 {(errors.items?.root || errors.items?.message) && (
                     <p className="text-red-500 text-sm mt-1">
                         {errors.items?.root?.message || errors.items?.message}
