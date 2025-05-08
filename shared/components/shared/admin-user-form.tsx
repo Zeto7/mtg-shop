@@ -31,7 +31,7 @@ type UserFormData = AddUserFormData | UpdateUserFormData;
 
 interface UserFormProps {
     user?: SafeUser | null;
-    onSuccess?: () => void;
+    onSuccess?: (updatedOrNewUser?: SafeUser) => void;
     onCancel?: () => void;
     className?: string;
 }
@@ -96,7 +96,6 @@ export function UserForm({ user, onSuccess, onCancel, className }: UserFormProps
     };
 
     return (
-        // <FormProvider {...form}> // Не обязателен здесь
         <form noValidate onSubmit={handleSubmit(onSubmit)} className={`space-y-4 ${className}`}>
             {isEditMode && user?.id && <input type="hidden" {...register('id')} value={user.id} />}
 
@@ -157,6 +156,5 @@ export function UserForm({ user, onSuccess, onCancel, className }: UserFormProps
                  </Button>
             </div>
         </form>
-        // </FormProvider>
     );
 }

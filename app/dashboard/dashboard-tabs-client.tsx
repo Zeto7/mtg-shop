@@ -7,7 +7,7 @@ import { UserListClient } from './user-list-client';
 import { ProductWithRelations, CategoryData, AdditionalData } from '@/@types/prisma';
 import { SafeUser } from '@/app/actions/user-actions';
 import { Order } from '@prisma/client';
-import { OrderListClient } from '@/shared/components/shared/admin-order-list-client';
+import { OrderListClient } from './admin-order-list-client';
 
 interface DashboardTabsClientProps {
     initialProducts: ProductWithRelations[];
