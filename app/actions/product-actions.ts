@@ -134,7 +134,7 @@ export async function updateProductAction(formData: FormData) {
 
     const { id, items, additionalIds, ...productData } = validationResult.data;
     const submittedItem = items[0];
-    const showAdditionals = submittedItem.amount === 1; // Check the flag
+    const showAdditionals = submittedItem.amount === 1;
 
     try {
         const existingProduct = await prisma.product.findUnique({
@@ -164,7 +164,6 @@ export async function updateProductAction(formData: FormData) {
                 imageUrl: productData.imageUrl || '',
                 description: productData.description || null,
                 items: itemOperations,
-                // Only set additionals if the flag is true and there are IDs, otherwise disconnect all
                 additionals: {
                     set: (showAdditionals && additionalIds && additionalIds.length > 0)
                         ? additionalIds.map(addId => ({ id: addId }))
@@ -183,18 +182,64 @@ export async function updateProductAction(formData: FormData) {
     }
 }
 
-// --- deleteProductAction remains the same ---
+
 export async function deleteProductAction(productId: number) {
-    if (!productId) return { success: false, message: "Product ID is required." };
+    console.log(`[DEL_PROD_START] Attempting to delete product ID: ${productId}`);
+
+    if (!productId || typeof productId !== 'number' || isNaN(productId)) {
+        console.error(`[DEL_PROD_ERROR] Invalid productId: ${productId}`);
+        return { success: false, message: "Product ID is invalid or missing." };
+    }
+
+    let productBeforeDelete = null;
     try {
-        await prisma.product.delete({ where: { id: productId }, });
-        revalidatePath('/dashboard'); return { success: true };
-    } catch (error) {
-        console.error("Failed to delete product:", error);
-         if (error instanceof Prisma.PrismaClientKnownRequestError) {
-             if (error.code === 'P2003') return { success: false, message: "Cannot delete product. It might be referenced in orders or elsewhere." };
-             if (error.code === 'P2025') return { success: false, message: "Product not found." };
-         }
-        return { success: false, message: "Failed to delete product." };
+        console.log(`[DEL_PROD_INFO] Fetching product before delete. ID: ${productId}`);
+        productBeforeDelete = await prisma.product.findUnique({ where: { id: productId } });
+        if (!productBeforeDelete) {
+            console.log(`[DEL_PROD_INFO] Product not found for ID: ${productId}. Cannot delete.`);
+            return { success: false, message: "Product not found." };
+        }
+        console.log(`[DEL_PROD_INFO] Product found:`, JSON.stringify(productBeforeDelete));
+    } catch (fetchError: any) {
+        console.error(`[DEL_PROD_ERROR] Error fetching product before delete. ID: ${productId}`, fetchError);
+        return { success: false, message: "Error checking product existence." };
+    }
+
+
+    try {
+        console.log(`[DEL_PROD_INFO] Calling prisma.product.delete for ID: ${productId}`);
+        let deleteResult;
+        try {
+            deleteResult = await prisma.product.delete({
+                where: { id: productId },
+            });
+            console.log(`[DEL_PROD_SUCCESS_DB] Product deleted from DB. Result:`, JSON.stringify(deleteResult));
+        } catch (prismaDeleteError: any) {
+            console.error(`[DEL_PROD_ERROR_PRISMA_DELETE] Prisma.delete failed for ID: ${productId}. Error:`, prismaDeleteError);
+            throw prismaDeleteError;
+        }
+
+        console.log(`[DEL_PROD_INFO] Attempting to revalidate path /dashboard. ID: ${productId}`);
+        revalidatePath('/dashboard');
+        console.log(`[DEL_PROD_SUCCESS_REVALIDATE] Path /dashboard revalidated. ID: ${productId}`);
+
+        return { success: true, message: "Product deleted successfully." };
+
+    } catch (error: any) {
+        console.error(`[DEL_PROD_ERROR_MAIN_CATCH] Error during product deletion process. ID: ${productId}.`);
+        console.error("[DEL_PROD_ERROR_MAIN_CATCH_RAW_ERROR_OBJECT]", error);
+        console.error("[DEL_PROD_ERROR_MAIN_CATCH_STACK_TRACE]", error.stack);
+    
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            console.error(`[DEL_PROD_ERROR_MAIN_CATCH] Prisma Error Code: ${error.code}. ID: ${productId}`);
+            if (error.code === 'P2003') {
+                return { success: false, message: "Cannot delete product. It might be referenced in orders or elsewhere." };
+            }
+            if (error.code === 'P2025') {
+                return { success: false, message: "Product not found (error during delete)." };
+            }
+        }
+        const errorMessage = error.message || "An unexpected error occurred while deleting the product.";
+        return { success: false, message: errorMessage };
     }
 }

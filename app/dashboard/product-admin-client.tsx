@@ -76,7 +76,6 @@ function ProductListItem({ product, onEdit, onDelete }: {
 }
 
 
-// Основной UI компонент админки
 interface ProductAdminClientProps {
     initialProducts: ProductWithRelations[];
     categories: CategoryData[];
