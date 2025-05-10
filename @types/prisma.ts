@@ -10,7 +10,6 @@ const productWithRelationsValidator = Prisma.validator<Prisma.ProductDefaultArgs
 
 export type ProductWithRelations = Prisma.ProductGetPayload<typeof productWithRelationsValidator>;
 
-// Другие типы остаются такими же
 export type CategoryData = Category;
 export type AdditionalData = Additional;
 export type ProductItemData = ProductItem;

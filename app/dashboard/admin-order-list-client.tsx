@@ -118,7 +118,7 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
                     <Input
                         id="order-search"
                         type="text"
-                        placeholder="Поиск по клиенту, email, ID..."
+                        placeholder="Поиск..."
                         value={searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);

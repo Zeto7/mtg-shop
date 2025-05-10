@@ -8,6 +8,7 @@ import { ProductWithRelations, CategoryData, AdditionalData } from '@/@types/pri
 import { SafeUser } from '@/app/actions/user-actions';
 import { Order } from '@prisma/client';
 import { OrderListClient } from './admin-order-list-client';
+import { ProductStockListClient } from './admin-product-stock-list-client';
 
 interface DashboardTabsClientProps {
     initialProducts: ProductWithRelations[];
@@ -26,10 +27,11 @@ export function DashboardTabsClient({
 }: DashboardTabsClientProps) {
     return (
         <Tabs defaultValue="products" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-5">
+            <TabsList className="grid w-full grid-cols-4 mb-5">
                 <TabsTrigger value="products">Товары</TabsTrigger>
                 <TabsTrigger value="users">Пользователи</TabsTrigger>
                 <TabsTrigger value="orders">Заказы</TabsTrigger>
+                <TabsTrigger value="stock">Учет Товаров</TabsTrigger>
             </TabsList>
 
             <TabsContent value="products">
@@ -46,6 +48,10 @@ export function DashboardTabsClient({
 
             <TabsContent value="orders">
                 <OrderListClient initialOrders={initialOrders} />
+            </TabsContent>
+
+            <TabsContent value="stock">
+                <ProductStockListClient products={initialProducts} />
             </TabsContent>
         </Tabs>
     );

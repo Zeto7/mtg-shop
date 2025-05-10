@@ -51,13 +51,13 @@ model Product {
     id          Int      @id @default(autoincrement())
     name        String
     price       Int      @default(0)
+    amount      Int      @default(0)
     description String?
     imageUrl    String
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
 
-    categoryId Int
-
+    categoryId  Int
     category    Category      @relation(fields: [categoryId], references: [id])
     additionals Additional[]
     items       ProductItem[]

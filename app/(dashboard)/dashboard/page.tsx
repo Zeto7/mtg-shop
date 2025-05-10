@@ -6,7 +6,6 @@ import { getProducts, getCategories, getAllAdditionals } from '@/app/actions/pro
 import { getUsers, SafeUser } from '@/app/actions/user-actions';
 import { getOrders } from "@/app/actions/admin-order-actions";
 import { DashboardTabsClient } from "@/app/dashboard/dashboard-tabs-client";
-import { Order } from '@prisma/client';
 
 export default async function DashboardPage() {
     const [products, categories, allAdditionals, users, orders] = await Promise.all([

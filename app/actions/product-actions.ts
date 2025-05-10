@@ -8,7 +8,6 @@ import { Prisma } from '@prisma/client';
 
 const productItemSchema = z.object({
     id: z.number().optional(),
-    // amount will be 0 (don't show additionals) or 1 (show additionals)
     amount: z.coerce.number().int().min(0).max(1, "Amount must be 0 or 1").optional().nullable(),
     price: z.coerce.number().int().min(0, 'Item price must be non-negative'),
 });
@@ -20,7 +19,7 @@ const productSchemaBase = z.object({
     price: z.coerce.number().int().min(0, 'Base price must be non-negative'),
     categoryId: z.coerce.number().int().positive('Category is required'),
     items: z.array(productItemSchema).length(1, 'Product must have exactly one variation.'),
-    additionalIds: z.array(z.coerce.number().int().positive()).optional(), // Keep this optional
+    additionalIds: z.array(z.coerce.number().int().positive()).optional(),
 });
 
 const createProductSchema = productSchemaBase;
@@ -28,7 +27,11 @@ const updateProductSchema = productSchemaBase.extend({
     id: z.coerce.number().int().positive(),
 });
 
-// --- getProducts, getCategories, getAllAdditionals remain the same ---
+const updateProductStockSchema = z.object({
+    productId: z.number().int().positive(),
+    newAmount: z.coerce.number().int().min(0),
+});
+
 export async function getProducts(): Promise<ProductWithRelations[]> {
     try {
         return await prisma.product.findMany({
@@ -45,7 +48,6 @@ export async function getAllAdditionals() {
     try { return await prisma.additional.findMany({ orderBy: { name: 'asc' } }); }
     catch (error) { console.error("Failed to fetch additionals:", error); return []; }
 }
-
 
 function parseFormData(formData: FormData) {
     const rawData = Object.fromEntries(formData.entries());
@@ -66,17 +68,17 @@ function parseFormData(formData: FormData) {
     } else if (!rawData.additionalIds) { parsedData.additionalIds = []; }
 
     if (rawData.id) parsedData.id = parseInt(rawData.id as string, 10);
+
     if (rawData.price) parsedData.price = parseInt(rawData.price as string, 10);
+
     if (rawData.categoryId) parsedData.categoryId = parseInt(rawData.categoryId as string, 10);
 
     if (parsedData.items && Array.isArray(parsedData.items)) {
         parsedData.items = parsedData.items.map((item: any) => ({
             id: item.id !== undefined ? parseInt(String(item.id), 10) : undefined,
             price: item.price !== undefined ? parseInt(String(item.price), 10) : 0,
-            // Ensure amount is parsed correctly, defaulting to 0 if not a valid number for the toggle
             amount: (item.amount !== undefined && item.amount !== null && !isNaN(parseInt(String(item.amount), 10)))
-                    ? parseInt(String(item.amount), 10)
-                    : 0, // Default to 0 if invalid or null
+                    ? parseInt(String(item.amount), 10) : 0,
         }));
     }
     return parsedData;
@@ -92,7 +94,7 @@ export async function addProductAction(formData: FormData) {
     }
 
     const { items, additionalIds, ...productData } = validationResult.data;
-    const showAdditionals = items[0].amount === 1; // Check the flag from the single item
+    const showAdditionals = items[0].amount === 1;
 
     try {
         const newProduct = await prisma.product.create({
@@ -103,10 +105,9 @@ export async function addProductAction(formData: FormData) {
                 items: {
                     create: items.map(item => ({
                         price: item.price,
-                        amount: item.amount ?? 0, // Use the 0/1 flag
+                        amount: item.amount ?? 0,
                     })),
                 },
-                // Only connect additionals if the flag is true and there are IDs
                 additionals: {
                     connect: (showAdditionals && additionalIds && additionalIds.length > 0)
                         ? additionalIds.map(id => ({ id }))
@@ -241,5 +242,46 @@ export async function deleteProductAction(productId: number) {
         }
         const errorMessage = error.message || "An unexpected error occurred while deleting the product.";
         return { success: false, message: errorMessage };
+    }
+}
+
+type UpdateStockResult = {
+    success: boolean;
+    message?: string;
+    product?: { id: number; amount: number | null };
+};
+
+export async function updateProductStock(
+    data: { productId: number; newAmount: number }
+): Promise<UpdateStockResult> {
+    const validation = updateProductStockSchema.safeParse(data);
+
+    if (!validation.success) {
+        console.error("Update stock validation failed:", validation.error.format());
+        return { success: false, message: "Неверные данные для обновления остатка." };
+    }
+
+    const { productId, newAmount } = validation.data;
+
+    try {
+        const updatedProduct = await prisma.product.update({
+            where: { id: productId },
+            data: { amount: newAmount },
+            select: { id: true, amount: true },
+        });
+
+        console.log(`Stock updated for product ID ${productId} to ${newAmount}`);
+        revalidatePath('/dashboard', 'layout');
+
+        return { success: true, product: updatedProduct, message: `Остаток товара #${productId} обновлен.` };
+    } catch (error: any) {
+        console.error(`Error updating stock for product ID ${productId}:`, error);
+        let message = 'Ошибка сервера при обновлении остатка.';
+        if (error.code === 'P2025') {
+            message = 'Товар для обновления остатка не найден.';
+        } else if (error.message) {
+            message = error.message;
+        }
+        return { success: false, message };
     }
 }
