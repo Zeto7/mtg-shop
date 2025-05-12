@@ -9,7 +9,7 @@ import { SafeUser } from '@/app/actions/user-actions';
 import { Order } from '@prisma/client';
 import { OrderListClient } from './admin-order-list-client';
 import { ProductStockListClient } from './admin-product-stock-list-client';
-import { AdminReportsClient } from './admin-reports-client';
+import { SalesReportClient } from './sales-report-client';
 
 interface DashboardTabsClientProps {
     initialProducts: ProductWithRelations[];
@@ -56,8 +56,8 @@ export function DashboardTabsClient({
                 <ProductStockListClient products={initialProducts} />
             </TabsContent>
 
-            <TabsContent value="reports" className="mt-0">
-                <AdminReportsClient />
+            <TabsContent value="reports">
+                <SalesReportClient />
             </TabsContent>
         </Tabs>
     );

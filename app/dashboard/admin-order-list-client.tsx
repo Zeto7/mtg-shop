@@ -95,7 +95,6 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
         setOrders(initialOrders);
     }, [initialOrders]);
 
-    // Callback для обновления статуса в локальном состоянии orders
     const handleOrderStatusUpdate = (orderId: number, newStatus: OrderStatus) => {
         setOrders(prevOrders =>
             prevOrders.map(order =>
