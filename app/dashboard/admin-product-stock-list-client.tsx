@@ -142,7 +142,7 @@ export function ProductStockListClient({ products: initialProductsProp }: Produc
                     <Input
                         id="product-stock-search"
                         type="text"
-                        placeholder="Поиск по ID или названию товара..."
+                        placeholder="Поиск..."
                         value={searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);

@@ -4,7 +4,7 @@ import React, { useState, useTransition } from 'react';
 import { DateRange } from "react-day-picker";
 import { addDays, format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Calendar as CalendarIcon, Download, Terminal, TrendingUp, BarChartBig } from "lucide-react";
+import { Calendar as CalendarIcon, Download, Terminal, TrendingUp, BarChartBig, Warehouse } from "lucide-react";
 import { cn } from '@/shared/lib/utils';
 import { Button } from "@/shared/components/ui/button";
 import { Calendar } from "@/shared/components/ui/calendar";
@@ -13,23 +13,28 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/shared/components/ui/alert";
 import { Label } from "@/shared/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/shared/components/ui/radio-group";
-import { generateReport, SalesReportItem, RatingReportItem } from '@/app/actions/report-actions';
+import { generateReport, SalesReportItem, RatingReportItem, StockReportItem, ReportResult } from '@/app/actions/report-actions'; // Уточните путь!
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 
-const formatCurrency = (amountInCents: number) => (amountInCents / 100).toFixed(2).replace('.', ',') + ' Br';
 
-type ReportDataType = SalesReportItem[] | RatingReportItem[];
+const formatCurrency = (amountInCents: number) => (amountInCents).toFixed(2).replace('.', ',') + ' Br';
+const formatDateSimple = (date: Date | null | undefined) => date ? format(date, "dd.MM.yyyy HH:mm") : 'N/A';
+
+type ReportDataType = SalesReportItem[] | RatingReportItem[] | StockReportItem[];
 
 export function SalesReportClient() {
-    const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: addDays(new Date(), -30), to: new Date() });
-    const [reportType, setReportType] = useState<'sales' | 'rating'>('sales');
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({
+        from: addDays(new Date(), -30),
+        to: new Date(),
+    });
+    const [reportType, setReportType] = useState<'sales' | 'rating' | 'stock'>('sales');
     const [reportData, setReportData] = useState<ReportDataType>([]);
     const [totalRevenue, setTotalRevenue] = useState<number | null>(null);
     const [isLoading, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
     const [reportGenerated, setReportGenerated] = useState(false);
-    const [generatedReportType, setGeneratedReportType] = useState<'sales' | 'rating' | null>(null);
+    const [generatedReportType, setGeneratedReportType] = useState<'sales' | 'rating' | 'stock' | null>(null);
 
     const handleGenerateReport = () => {
         if (!dateRange?.from || !dateRange?.to) {
@@ -44,7 +49,7 @@ export function SalesReportClient() {
 
         startTransition(async () => {
             try {
-                const result = await generateReport({
+                const result: ReportResult = await generateReport({
                     startDate: dateRange.from!,
                     endDate: dateRange.to!,
                     reportType: reportType,
@@ -63,17 +68,18 @@ export function SalesReportClient() {
                     setError(result.message || "Не удалось сформировать отчет.");
                     toast.error(result.message || "Не удалось сформировать отчет.");
                 }
-            } catch (e) {
+            } catch (e: any) {
                 console.error("Error generating report on client:", e);
-                setError("Ошибка при формировании отчета.");
-                toast.error("Ошибка при формировании отчета.");
+                const message = e?.message || "Ошибка при формировании отчета.";
+                setError(message);
+                toast.error(message);
             }
         });
     };
 
     const handleExportToExcel = () => {
-        if (!reportData || reportData.length === 0) {
-            toast.error("Нет данных для экспорта.");
+        if (!reportGenerated || !reportData || reportData.length === 0) {
+            toast.error("Нет данных для экспорта. Сначала сформируйте отчет.");
             return;
         }
 
@@ -85,9 +91,7 @@ export function SalesReportClient() {
         if (generatedReportType === 'sales') {
             headers = ["ID Товара", "Название товара", "Кол-во продано (шт.)", "Средняя цена (Br)", "Общая выручка (Br)"];
             dataForSheet = (reportData as SalesReportItem[]).map(item => [
-                item.productId,
-                item.productName,
-                item.quantitySold,
+                item.productId, item.productName, item.quantitySold,
                 parseFloat((item.averagePrice).toFixed(2)),
                 parseFloat((item.totalRevenue).toFixed(2))
             ]);
@@ -96,20 +100,34 @@ export function SalesReportClient() {
         } else if (generatedReportType === 'rating') {
             headers = ["Место", "ID Товара", "Название товара", "Кол-во продано (шт.)"];
             dataForSheet = (reportData as RatingReportItem[]).map((item, index) => [
-                index + 1,
-                item.productId,
-                item.productName,
-                item.quantitySold
+                index + 1, item.productId, item.productName, item.quantitySold
             ]);
             sheetName = "Рейтинг товаров (Топ-20)";
             fileNameSuffix = "rating_report";
+        } else if (generatedReportType === 'stock') {
+            headers = ["ID Товара", "Название товара", "Текущий остаток (шт.)", "Последнее обновление"];
+            dataForSheet = (reportData as StockReportItem[]).map(item => [
+                item.productId,
+                item.productName,
+                item.currentStock,
+                item.lastUpdatedAt ? formatDateSimple(item.lastUpdatedAt) : 'N/A'
+            ]);
+            sheetName = "Отчет по остаткам";
+            fileNameSuffix = "stock_report";
         } else {
             toast.error("Неизвестный тип отчета для экспорта.");
             return;
         }
 
         const ws = XLSX.utils.aoa_to_sheet([headers, ...dataForSheet]);
-        ws['!cols'] = headers.map(header => ({ wch: header.length > 20 ? header.length : (header.length < 10 ? 10 : 20) }));
+        ws['!cols'] = headers.map((_, i) => {
+            const maxLength = Math.max(
+                headers[i].length,
+                ...dataForSheet.map(row => (row[i] ? String(row[i]).length : 0))
+            );
+            return { wch: maxLength + 2 };
+        });
+
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, sheetName);
         const fileName = `${fileNameSuffix}_${format(dateRange?.from || new Date(), 'yyyy-MM-dd')}_to_${format(dateRange?.to || new Date(), 'yyyy-MM-dd')}.xlsx`;
@@ -126,7 +144,7 @@ export function SalesReportClient() {
                     <RadioGroup
                         defaultValue="sales"
                         value={reportType}
-                        onValueChange={(value) => setReportType(value as 'sales' | 'rating')}
+                        onValueChange={(value) => setReportType(value as 'sales' | 'rating' | 'stock')}
                         className="flex flex-col sm:flex-row gap-3 sm:gap-4"
                     >
                         <div className="flex items-center space-x-2">
@@ -141,23 +159,54 @@ export function SalesReportClient() {
                                 <TrendingUp className="h-4 w-4 text-gray-500 dark:text-gray-400"/> Рейтинг товаров (Топ-20)
                             </Label>
                         </div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="stock" id="report-stock" />
+                            <Label htmlFor="report-stock" className="cursor-pointer flex items-center gap-2 text-sm">
+                                <Warehouse className="h-4 w-4 text-gray-500 dark:text-gray-400"/> Отчет по остаткам
+                            </Label>
+                        </div>
                     </RadioGroup>
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-end gap-4">
                     <div className={cn("grid gap-1")}>
-                        <Label htmlFor="date-range-picker" className="text-sm font-medium text-gray-700 dark:text-gray-300">Период:</Label>
+                        <Label htmlFor="date-range-picker-reports" className="text-sm font-medium text-gray-700 dark:text-gray-300">Период:</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
-                                    id="date-range-picker"
+                                    id="date-range-picker-reports"
                                     variant={"outline"}
-                                    className={cn("w-full sm:w-[280px] justify-start text-left font-normal h-10", !dateRange && "text-muted-foreground")}
-                                > <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {dateRange?.from ? (dateRange.to ? (<>{format(dateRange.from, "dd LLL y", { locale: ru })} - {format(dateRange.to, "dd LLL y", { locale: ru })}</>) : format(dateRange.from, "dd LLL y", { locale: ru })) : (<span>Выберите диапазон</span>)}
+                                    className={cn(
+                                        "w-full sm:w-[280px] justify-start text-left font-normal h-10",
+                                        !dateRange && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateRange?.from ? (
+                                        dateRange.to ? (
+                                            <>
+                                                {format(dateRange.from, "dd LLL y", { locale: ru })} - {format(dateRange.to, "dd LLL y", { locale: ru })}
+                                            </>
+                                        ) : (
+                                            format(dateRange.from, "dd LLL y", { locale: ru })
+                                        )
+                                    ) : (
+                                        <span>Выберите диапазон</span>
+                                    )}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={ru} /></PopoverContent>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={dateRange?.from}
+                                    selected={dateRange}
+                                    onSelect={setDateRange}
+                                    numberOfMonths={2}
+                                    locale={ru}
+                                    disabled={(date) => date > new Date() || date < new Date("2000-01-01")}
+                                />
+                            </PopoverContent>
                         </Popover>
                     </div>
                     <Button onClick={handleGenerateReport} disabled={isLoading || !dateRange?.from || !dateRange?.to} className="h-10 w-full sm:w-auto">
@@ -171,7 +220,13 @@ export function SalesReportClient() {
                 </div>
             </div>
 
-            {error && ( <Alert variant="destructive" className="mt-4"> <Terminal className="h-4 w-4" /> <AlertTitle>Ошибка</AlertTitle> <AlertDescription>{error}</AlertDescription> </Alert> )}
+            {error && (
+                <Alert variant="destructive" className="mt-4">
+                    <Terminal className="h-4 w-4" />
+                    <AlertTitle>Ошибка</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
 
             {reportGenerated && (
                  <div className="mt-6 bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow">
@@ -179,9 +234,13 @@ export function SalesReportClient() {
                          <>
                              <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
                                  <h3 className="text-md sm:text-lg font-semibold text-gray-900 dark:text-white mb-2 sm:mb-0">
-                                     {generatedReportType === 'sales' ? "Отчет о продажах" : "Рейтинг товаров"} за: {" "}
-                                     {dateRange?.from && format(dateRange.from, "dd.MM.yy", { locale: ru })} - {" "}
-                                     {dateRange?.to && format(dateRange.to, "dd.MM.yy", { locale: ru })}
+                                     { generatedReportType === 'sales' ? "Отчет о продажах"
+                                       : generatedReportType === 'rating' ? "Рейтинг товаров"
+                                       : "Отчет по остаткам товаров" }
+                                     {/* Период для sales и rating */}
+                                     {(generatedReportType === 'sales' || generatedReportType === 'rating') && dateRange?.from && dateRange?.to && (
+                                        <> за: <span className="font-normal">{format(dateRange.from, "dd.MM.yy", { locale: ru })} - {format(dateRange.to, "dd.MM.yy", { locale: ru })}</span></>
+                                     )}
                                  </h3>
                                   {generatedReportType === 'sales' && totalRevenue !== null && (
                                      <p className="text-md sm:text-lg font-semibold text-gray-900 dark:text-white">
@@ -189,27 +248,55 @@ export function SalesReportClient() {
                                      </p>
                                  )}
                              </div>
+
                              <div className="overflow-x-auto rounded-md border dark:border-gray-700">
                                  <Table>
                                      <TableHeader>
                                          <TableRow className="dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
+                                             {/* Заголовки STOCK */}
+                                             {generatedReportType === 'stock' && <>
+                                                 <TableHead className="text-gray-600 dark:text-gray-300">ID Товара</TableHead>
+                                                 <TableHead className="min-w-[200px] text-gray-600 dark:text-gray-300">Название товара</TableHead>
+                                                 <TableHead className="text-center text-gray-600 dark:text-gray-300">Остаток (шт.)</TableHead>
+                                                 <TableHead className="text-right text-gray-600 dark:text-gray-300">Обновлено</TableHead>
+                                             </>}
+                                             {/* Заголовки RATING */}
                                              {generatedReportType === 'rating' && <TableHead className="text-gray-600 dark:text-gray-300">Место</TableHead>}
-                                             <TableHead className="text-gray-600 dark:text-gray-300">ID Товара</TableHead>
-                                             <TableHead className="min-w-[200px] text-gray-600 dark:text-gray-300">Название товара</TableHead>
-                                             <TableHead className="text-center text-gray-600 dark:text-gray-300">Кол-во продано</TableHead>
-                                             {generatedReportType === 'sales' && <TableHead className="text-right text-gray-600 dark:text-gray-300">Средняя цена</TableHead>}
-                                             {generatedReportType === 'sales' && <TableHead className="text-right text-gray-600 dark:text-gray-300">Общая выручка</TableHead>}
+                                             {/* Общие заголовки SALES и RATING */}
+                                             {(generatedReportType === 'sales' || generatedReportType === 'rating') && <>
+                                                 <TableHead className="text-gray-600 dark:text-gray-300">ID Товара</TableHead>
+                                                 <TableHead className="min-w-[200px] text-gray-600 dark:text-gray-300">Название товара</TableHead>
+                                                 <TableHead className="text-center text-gray-600 dark:text-gray-300">Кол-во продано</TableHead>
+                                             </>}
+                                             {/* Заголовки SALES */}
+                                             {generatedReportType === 'sales' && <>
+                                                 <TableHead className="text-right text-gray-600 dark:text-gray-300">Средняя цена</TableHead>
+                                                 <TableHead className="text-right text-gray-600 dark:text-gray-300">Общая выручка</TableHead>
+                                             </>}
                                          </TableRow>
                                      </TableHeader>
                                      <TableBody>
                                          {reportData.map((item, index) => (
-                                             <TableRow key={item.productId} className="dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                                             <TableRow key={generatedReportType === 'stock' ? (item as StockReportItem).productId : item.productId} className="dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                                                 {/* Данные STOCK */}
+                                                 {generatedReportType === 'stock' && <>
+                                                     <TableCell className="font-medium text-gray-800 dark:text-gray-100">{(item as StockReportItem).productId}</TableCell>
+                                                     <TableCell className="text-gray-800 dark:text-gray-100">{(item as StockReportItem).productName}</TableCell>
+                                                     <TableCell className="text-center text-gray-700 dark:text-gray-300">{(item as StockReportItem).currentStock ?? 'N/A'}</TableCell>
+                                                     <TableCell className="text-right text-xs text-gray-600 dark:text-gray-400">{formatDateSimple((item as StockReportItem).lastUpdatedAt)}</TableCell>
+                                                 </>}
                                                  {generatedReportType === 'rating' && <TableCell className="text-gray-700 dark:text-gray-200">{index + 1}</TableCell>}
-                                                 <TableCell className="font-medium text-gray-800 dark:text-gray-100">{item.productId}</TableCell>
-                                                 <TableCell className="text-gray-800 dark:text-gray-100">{item.productName}</TableCell>
-                                                 <TableCell className="text-center text-gray-700 dark:text-gray-300">{item.quantitySold}</TableCell>
-                                                 {generatedReportType === 'sales' && <TableCell className="text-right text-gray-700 dark:text-gray-300">{formatCurrency((item as SalesReportItem).averagePrice)}</TableCell>}
-                                                 {generatedReportType === 'sales' && <TableCell className="text-right font-semibold text-gray-800 dark:text-gray-100">{formatCurrency((item as SalesReportItem).totalRevenue)}</TableCell>}
+                                                 {/* Общие данные SALES и RATING */}
+                                                 {(generatedReportType === 'sales' || generatedReportType === 'rating') && <>
+                                                    <TableCell className="font-medium text-gray-800 dark:text-gray-100">{item.productId}</TableCell>
+                                                    <TableCell className="text-gray-800 dark:text-gray-100">{item.productName}</TableCell>
+                                                    <TableCell className="text-center text-gray-700 dark:text-gray-300">{item.quantitySold}</TableCell>
+                                                 </>}
+                                                 {/* Данные SALES */}
+                                                 {generatedReportType === 'sales' && <>
+                                                    <TableCell className="text-right text-gray-700 dark:text-gray-300">{formatCurrency((item as SalesReportItem).averagePrice)}</TableCell>
+                                                    <TableCell className="text-right font-semibold text-gray-800 dark:text-gray-100">{formatCurrency((item as SalesReportItem).totalRevenue)}</TableCell>
+                                                 </>}
                                              </TableRow>
                                          ))}
                                      </TableBody>
