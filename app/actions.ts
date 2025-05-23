@@ -4,10 +4,11 @@ import { prisma } from '@/prisma/prisma-client';
 import { CheckoutFormValues } from "@/shared/components/shared/checkout-components/checkout-form-schema";
 import { getUserSession } from "@/shared/lib/get-user-session";
 import { sendEmail } from '@/shared/lib/send-email';
-import { OrderStatus, Prisma, UserRole } from "@prisma/client";
+import { OrderStatus, Prisma, UserRole, Order } from "@prisma/client";
 import { hashSync } from "bcrypt"; 
 import { cookies } from "next/headers";
 import { z } from 'zod';
+import { generateOrderConfirmationHtml, generateOrderConfirmationText } from '@/shared/lib/email-templates';
 
 type CreateOrderResult = {
     success: boolean;
@@ -67,7 +68,27 @@ export async function createOrder(data: CheckoutFormValues): Promise<CreateOrder
              return { success: false, message: userCart ? 'Корзина пуста' : 'Корзина не найдена' };
         }
 
-        // 2. Создаем заказ
+        const itemsForOrderJson = userCart.items.map(item => ({
+            id: item.id,
+            quantity: item.quantity,
+            productItemId: item.productItemId,
+            productItem: {
+                id: item.productItem.id,
+                price: item.productItem.price,
+                productId: item.productItem.productId,
+                product: item.productItem.product ? {
+                    id: item.productItem.product.id,
+                    name: item.productItem.product.name,
+                    imageUrl: item.productItem.product.imageUrl,
+                } : null,
+            },
+            additionals: item.additionals.map(add => ({
+                id: add.id,
+                name: add.name,
+                price: add.price,
+            })),
+        }));
+
         const order = await prisma.order.create({
             data: {
                 token: cartToken,
@@ -78,31 +99,15 @@ export async function createOrder(data: CheckoutFormValues): Promise<CreateOrder
                 comment: data.comment,
                 totalAmount: userCart.totalAmount,
                 status: OrderStatus.PENDING,
-                items: JSON.stringify(userCart.items),
+                items: JSON.stringify(itemsForOrderJson),
                 userId: userId,
             },
         });
 
         try {
             console.log(`Attempting to send order confirmation email for order #${order.id} to ${order.email}`);
-            const emailHtmlBody = `
-                <h1>Спасибо за ваш заказ, ${order.fullName}!</h1>
-                <p>Ваш заказ #${order.id} в магазине MTG Shop успешно оформлен и принят в обработку.</p>
-                <p>Сумма заказа: ${order.totalAmount.toFixed(2)} Br.</p>
-                <p>Мы свяжемся с вами в ближайшее время для подтверждения деталей.</p>
-                <br/>
-                <p>С уважением,<br/>Команда MTG Shop</p>
-            `;
-            
-            const emailTextBody = `
-                Спасибо за ваш заказ, ${order.fullName}!
-                Ваш заказ #${order.id} в магазине MTG Shop успешно оформлен и принят в обработку.
-                Сумма заказа: ${order.totalAmount.toFixed(2)} Br.
-                Мы свяжемся с вами в ближайшее время для подтверждения деталей.
-
-                С уважением,
-                Команда MTG Shop
-            `;
+            const emailHtmlBody = generateOrderConfirmationHtml(order);
+            const emailTextBody = generateOrderConfirmationText(order);
 
             const emailResult = await sendEmail({
                 to: order.email,
