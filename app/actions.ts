@@ -84,15 +84,40 @@ export async function createOrder(data: CheckoutFormValues): Promise<CreateOrder
         });
 
         try {
-            console.log(`Attempting simple email for order #${order.id}`);
-            await sendEmail(
-                "gleb.by2005@gmail.com",
-                `[MTG Shop] Заказ #${order.id} оформлен`,
-                `Спасибо за покупку! Ваш заказ #${order.id} принят в обработку.`
-            );
-            console.log(`Simple email potentially sent for order ${order.id}.`);
+            console.log(`Attempting to send order confirmation email for order #${order.id} to ${order.email}`);
+            const emailHtmlBody = `
+                <h1>Спасибо за ваш заказ, ${order.fullName}!</h1>
+                <p>Ваш заказ #${order.id} в магазине MTG Shop успешно оформлен и принят в обработку.</p>
+                <p>Сумма заказа: ${order.totalAmount.toFixed(2)} Br.</p>
+                <p>Мы свяжемся с вами в ближайшее время для подтверждения деталей.</p>
+                <br/>
+                <p>С уважением,<br/>Команда MTG Shop</p>
+            `;
+            
+            const emailTextBody = `
+                Спасибо за ваш заказ, ${order.fullName}!
+                Ваш заказ #${order.id} в магазине MTG Shop успешно оформлен и принят в обработку.
+                Сумма заказа: ${order.totalAmount.toFixed(2)} Br.
+                Мы свяжемся с вами в ближайшее время для подтверждения деталей.
+
+                С уважением,
+                Команда MTG Shop
+            `;
+
+            const emailResult = await sendEmail({
+                to: order.email,
+                subject: `[MTG Shop] Ваш заказ #${order.id} оформлен`,
+                html: emailHtmlBody,
+                text: emailTextBody,
+            });
+
+            if (emailResult.success) {
+                console.log(`Order confirmation email sent successfully for order ${order.id}.`);
+            } else {
+                console.warn(`Failed to send order confirmation email for order ${order.id}: ${emailResult.message}`, emailResult.error);
+            }
         } catch (emailError) {
-            console.error(`Failed to send simple email for order ${order.id}:`, emailError);
+            console.error(`Exception during email sending for order ${order.id}:`, emailError);
         }
 
 

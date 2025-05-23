@@ -1,60 +1,121 @@
-import React from 'react';
 import { Order } from '@prisma/client';
 
-interface OrderJsonItem {
-    id: number; quantity: number; productItemId: number;
-    productItem?: {
-        id: number; price: number; productId: number;
-        product?: { id: number; name: string; imageUrl?: string; }
-    }
+const formatCurrencyForEmail = (amount: number) => (amount).toFixed(2).replace('.', ',') + ' Br';
+
+interface OrderItemDetailForEmail {
+    id: number;
+    quantity: number;
+    productItemId: number;
+    unitPrice?: number;
+    productName?: string | null;
+    productImageUrl?: string | null;
     additionals?: { id: number; name: string; price: number }[];
+    totalPriceForItem: number;
 }
 
-interface OrderConfirmationEmailProps {
-    orderId: number; orderDate: Date; totalAmount: number;
-    fullName: string; items: OrderJsonItem[]; address: string;
-    comment?: string;
+interface GenerateOrderConfirmationEmailParams {
+    order: Order;
 }
 
-const formatCurrency = (amount: number) => (amount / 100).toFixed(2).replace('.', ',') + ' Br';
+interface EmailContent {
+    html: string;
+    text: string;
+    subject: string;
+}
 
-const OrderConfirmationEmail: React.FC<OrderConfirmationEmailProps> = ({
-    orderId, orderDate, totalAmount, fullName, items, address, comment
-}) => (
-    <html lang="ru">
-      <head>
-        <meta charSet="UTF-8" />
-        <title>Подтверждение Заказа #{orderId}</title>
-        <style>{/* ... Стили ... */}</style>
-      </head>
-      <body>
-        <div className="container" style={{maxWidth: '600px', margin: '20px auto', padding: '20px', border: '1px solid #eee', borderRadius: '5px', fontFamily: 'sans-serif', lineHeight: 1.5, color: '#333'}}>
-          <h1 style={{color: '#000'}}>Спасибо за ваш заказ, {fullName}!</h1>
-          <p>Ваш заказ #{orderId} от {new Date(orderDate).toLocaleDateString('ru-RU')} успешно принят.</p>
-          <h2 style={{color: '#000'}}>Детали заказа:</h2>
-          <table style={{width: '100%', borderCollapse: 'collapse', marginBottom: '20px'}}>
-            <thead><tr><th style={{border: '1px solid #ddd', padding: '8px', textAlign: 'left', backgroundColor: '#f2f2f2'}}>Товар</th><th>Кол-во</th><th>Цена</th><th>Сумма</th></tr></thead>
-            <tbody>
-              {items.map((item, index) => {
-                 const productName = item.productItem?.product?.name ?? `Товар (ID: ${item.productItemId})`;
-                 const itemPrice = item.productItem?.price ?? 0;
-                 const additionalsTotal = item.additionals?.reduce((sum, add) => sum + (add?.price ?? 0), 0) ?? 0;
-                 const displayPrice = itemPrice + additionalsTotal;
-                 const itemTotal = displayPrice * item.quantity;
-                 return (<tr key={`${item.id}-${index}`}><td>{productName} {item.additionals && item.additionals.length > 0 && `(+ ${item.additionals.map(a => a?.name).join(', ')})`}</td><td>{item.quantity}</td><td>{formatCurrency(displayPrice)}</td><td>{formatCurrency(itemTotal)}</td></tr>);
-              })}
-            </tbody>
-          </table>
-          <p style={{fontWeight: 'bold', fontSize: '1.1em'}}>Итого к оплате: {formatCurrency(totalAmount)}</p>
-          <h2 style={{color: '#000'}}>Информация о доставке:</h2>
-          <p><strong>Получатель:</strong> {fullName}</p>
-          <p><strong>Адрес:</strong> {address}</p>
-          {comment && <p><strong>Комментарий:</strong> {comment}</p>}
-          <p>Мы свяжемся с вами для подтверждения деталей.</p>
-          <p>С уважением,<br/>Команда MTG Shop</p>
+export function generateOrderConfirmationEmail({
+    order,
+}: GenerateOrderConfirmationEmailParams): EmailContent {
+    let parsedOrderItems: OrderItemDetailForEmail[] = [];
+    if (typeof order.items === 'string') {
+        try {
+            parsedOrderItems = JSON.parse(order.items);
+        } catch (e) {
+            console.error("Failed to parse order.items for email generation:", e);
+        }
+    } else if (Array.isArray(order.items)) {
+        parsedOrderItems = order.items as unknown as OrderItemDetailForEmail[];
+    }
+
+
+    const subject = `[MTG Shop] Ваш заказ #${order.id} успешно оформлен`;
+
+    const itemsHtmlList = parsedOrderItems.map(item => `
+        <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 10px; vertical-align: top;">
+                ${item.productName || 'Неизвестный товар'}
+                ${item.additionals && item.additionals.length > 0 ?
+                    `<br><small style="color: #555;">Допы: ${item.additionals.map(a => `${a.name} (+${formatCurrencyForEmail(a.price)})`).join(', ')}</small>` : ''}
+            </td>
+            <td style="padding: 10px; text-align: center; vertical-align: top;">${item.quantity}</td>
+            <td style="padding: 10px; text-align: right; vertical-align: top;">${formatCurrencyForEmail(item.unitPrice || 0)}</td>
+            <td style="padding: 10px; text-align: right; vertical-align: top;">${formatCurrencyForEmail(item.totalPriceForItem)}</td>
+        </tr>
+    `).join('');
+
+    const html = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+                <h2 style="color: #2c3e50; text-align: center;">Спасибо за ваш заказ, ${order.fullName}!</h2>
+                <p>Ваш заказ <strong>#${order.id}</strong> в магазине MTG Shop успешно оформлен и принят в обработку.</p>
+                
+                <h3 style="color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 30px;">Детали заказа:</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9em;">
+                    <thead>
+                        <tr style="background-color: #f9f9f9;">
+                            <th style="padding: 10px; text-align: left; border-bottom: 1px solid #eee;">Товар</th>
+                            <th style="padding: 10px; text-align: center; border-bottom: 1px solid #eee;">Кол-во</th>
+                            <th style="padding: 10px; text-align: right; border-bottom: 1px solid #eee;">Цена за шт.</th>
+                            <th style="padding: 10px; text-align: right; border-bottom: 1px solid #eee;">Сумма</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHtmlList}
+                    </tbody>
+                </table>
+                
+                <div style="text-align: right; margin-top: 20px;">
+                    <p style="font-size: 1.2em; font-weight: bold; color: #333;">Общая сумма заказа: ${formatCurrencyForEmail(order.totalAmount)}</p>
+                </div>
+                
+                ${order.address ? `<p><strong>Адрес доставки:</strong> ${order.address}</p>` : '<p><strong>Способ получения:</strong> Самовывоз</p>'}
+                ${order.comment ? `<p><strong>Комментарий к заказу:</strong> ${order.comment}</p>` : ''}
+                
+                <p style="margin-top: 30px;">Мы свяжемся с вами в ближайшее время для подтверждения деталей.</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                <p style="font-size: 0.9em; color: #777; text-align: center;">С уважением,<br/>Команда MTG Shop</p>
+            </div>
         </div>
-      </body>
-    </html>
-);
+    `;
 
-export default OrderConfirmationEmail; // Убедитесь, что экспорт по умолчанию
+    const itemsTextList = parsedOrderItems.map(item =>
+        `- ${item.productName || 'Неизвестный товар'}\n` +
+        `  Количество: ${item.quantity}\n` +
+        `  Цена за шт.: ${formatCurrencyForEmail(item.unitPrice || 0)}\n` +
+        `  Сумма по позиции: ${formatCurrencyForEmail(item.totalPriceForItem)}\n` +
+        `${item.additionals && item.additionals.length > 0 ? `  Допы: ${item.additionals.map(a => `${a.name} (+${formatCurrencyForEmail(a.price)})`).join(', ')}\n` : ''}`
+    ).join('\n');
+
+    const text = `
+Спасибо за ваш заказ, ${order.fullName}!
+
+Ваш заказ #${order.id} в магазине MTG Shop успешно оформлен и принят в обработку.
+
+ДЕТАЛИ ЗАКАЗА:
+-----------------------------------
+${itemsTextList}
+-----------------------------------
+
+ОБЩАЯ СУММА ЗАКАЗА: ${formatCurrencyForEmail(order.totalAmount)}
+
+${order.address ? `АДРЕС ДОСТАВКИ: ${order.address}` : 'СПОСОБ ПОЛУЧЕНИЯ: Самовывоз'}
+${order.comment ? `КОММЕНТАРИЙ К ЗАКАЗУ: ${order.comment}` : ''}
+
+Мы свяжемся с вами в ближайшее время для подтверждения деталей.
+
+С уважением,
+Команда MTG Shop
+    `;
+
+    return { html, text, subject };
+}
