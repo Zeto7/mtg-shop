@@ -197,7 +197,7 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
                     </div>
                 )}
             />
-
+            
             <div>
                 <Label htmlFor="imageUrl">URL изображения</Label>
                 <Input id="imageUrl" {...register('imageUrl')} aria-invalid={errors.imageUrl ? "true" : "false"} />
