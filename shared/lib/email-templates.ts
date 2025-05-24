@@ -65,36 +65,37 @@ export function generateOrderConfirmationHtml(order: Order): string {
         let additionalsHtml = '';
         if (item.additionals && item.additionals.length > 0) {
             additionalsHtml = `
-                <ul style="margin: 0; padding-left: 15px; font-size: 0.85em; color: #555;">
-                    ${item.additionals.map(add => `<li>${add.name} (+${add.price.toFixed(2)} Br)</li>`).join('')}
+                <ul style="margin: 5px 0 0 0; padding-left: 20px; font-size: 0.95em; color: #444;">
+                    ${item.additionals.map(add => `<li style="margin-bottom: 3px;">${add.name} (+${add.price.toFixed(2)} Br)</li>`).join('')}
                 </ul>
             `;
         }
 
         return `
-            <tr style="border-bottom: 1px solid #eee;">
-                <td style="padding: 10px; text-align: left;">${item.productItem?.product?.name || 'Неизвестный товар'}</td>
-                <td style="padding: 10px; text-align: center;">${item.quantity}</td>
-                <td style="padding: 10px; text-align: right;">${pricePerUnitWithAdditionals.toFixed(2)} Br</td>
-                <td style="padding: 10px; text-align: right;">${totalItemPrice.toFixed(2)} Br</td>
+            <tr style="border-bottom: 1px solid #eaeaea;">
+                <td style="padding: 12px 10px; text-align: left; font-size: 1.05em;">${item.productItem?.product?.name || 'Неизвестный товар'}</td>
+                <td style="padding: 12px 10px; text-align: center; font-size: 1.05em;">${item.quantity}</td>
+                <td style="padding: 12px 10px; text-align: right; font-size: 1.05em;">${pricePerUnitWithAdditionals.toFixed(2)} Br</td>
+                <td style="padding: 12px 10px; text-align: right; font-size: 1.05em;">${totalItemPrice.toFixed(2)} Br</td>
             </tr>
-            ${additionalsHtml ? `<tr><td colspan="4" style="padding: 0 10px 10px 10px;">${additionalsHtml}</td></tr>` : ''}
+            ${additionalsHtml ? `<tr><td colspan="4" style="padding: 0px 10px 12px 15px;">${additionalsHtml}</td></tr>` : ''}
         `;
     }).join('');
 
     return `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 20px auto; border: 1px solid #ddd; border-radius: 5px; padding: 20px;">
-            <h1 style="color: #333; text-align: center; border-bottom: 2px solid #eee; padding-bottom: 10px;">Спасибо за ваш заказ, ${order.fullName}!</h1>
-            <p>Ваш заказ <strong>#${order.id}</strong> в магазине MTG Shop успешно оформлен и принят в обработку.</p>
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.7; color: #333333; max-width: 700px; /* Увеличена ширина */ margin: 25px auto; border: 1px solid #dddddd; border-radius: 8px; padding: 25px 30px; background-color: #ffffff; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+            <h1 style="color: #2c3e50; text-align: center; border-bottom: 2px solid #eeeeee; padding-bottom: 15px; font-size: 1.8em; /* Увеличен заголовок */ margin-bottom: 20px;">Спасибо за ваш заказ, ${order.fullName}!</h1>
+            <p style="font-size: 1.1em; /* Увеличен текст параграфа */ margin-bottom: 10px;">Ваш заказ <strong>#${order.id}</strong> в магазине MTG Shop успешно оформлен и принят в обработку.</p>
+            <p style="font-size: 1.1em; margin-bottom: 25px;">Состояние вашего заказа можно просмотреть в вашем профиле на сайте.</p>
             
-            <h2 style="color: #333; margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Детали заказа:</h2>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <h2 style="color: #2c3e50; margin-top: 25px; border-bottom: 1px solid #eeeeee; padding-bottom: 8px; font-size: 1.5em; /* Увеличен подзаголовок */">Детали заказа:</h2>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 1.05em; /* Увеличен текст таблицы */">
                 <thead>
-                    <tr style="background-color: #f9f9f9;">
-                        <th style="padding: 10px; text-align: left;">Название товара</th>
-                        <th style="padding: 10px; text-align: center;">Кол-во</th>
-                        <th style="padding: 10px; text-align: right;">Цена за ед.</th>
-                        <th style="padding: 10px; text-align: right;">Сумма</th>
+                    <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                        <th style="padding: 12px 10px; text-align: left; font-weight: 600;">Название товара</th>
+                        <th style="padding: 12px 10px; text-align: center; font-weight: 600;">Кол-во</th>
+                        <th style="padding: 12px 10px; text-align: right; font-weight: 600;">Цена за ед.</th>
+                        <th style="padding: 12px 10px; text-align: right; font-weight: 600;">Сумма</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -102,17 +103,17 @@ export function generateOrderConfirmationHtml(order: Order): string {
                 </tbody>
             </table>
 
-            <p style="text-align: right; font-size: 1.2em; font-weight: bold; margin-top: 20px;">
+            <p style="text-align: right; font-size: 1.3em; /* Увеличена общая сумма */ font-weight: bold; margin-top: 25px; color: #2c3e50;">
                 Общая сумма заказа: ${order.totalAmount.toFixed(2)} Br
             </p>
             
-            <p>Мы свяжемся с вами в ближайшее время для подтверждения деталей по телефону: <strong>${order.phone}</strong>.</p>
-            <p>Адрес доставки: <strong>${order.address}</strong></p>
-            ${order.comment ? `<p>Комментарий к заказу: <em>${order.comment}</em></p>` : ''}
+            <p style="font-size: 1.1em; margin-top: 20px;">Если у вас будут какие-то вопросы можете связаться с нами по этому номеру телефона: <strong>+375291112233</strong>.</p>
+            <p style="font-size: 1.1em;">Адрес доставки: <strong>${order.address}</strong></p>
+            ${order.comment ? `<p style="font-size: 1.1em;">Комментарий к заказу: <em style="color: #555;">${order.comment}</em></p>` : ''}
             
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+            <hr style="border: none; border-top: 1px solid #eeeeee; margin: 25px 0;" />
             
-            <p style="font-size: 0.9em; text-align: center; color: #777;">
+            <p style="font-size: 1em; /* Увеличен текст подписи */ text-align: center; color: #777777;">
                 С уважением,<br/>Команда MTG Shop
             </p>
         </div>
