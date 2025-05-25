@@ -180,7 +180,7 @@ export function UserListClient({ users: initialUsersProp }: UserListClientProps)
                             <Table>
                                 <TableHeader>
                                     <TableRow className="dark:border-gray-700">
-                                        <TableHead className="w-[50px] text-gray-700 dark:text-gray-300">ID</TableHead>
+                                        {/* <TableHead className="w-[50px] text-gray-700 dark:text-gray-300">ID</TableHead> */}
                                         <TableHead className="text-gray-700 dark:text-gray-300">Полное имя</TableHead>
                                         <TableHead className="text-gray-700 dark:text-gray-300">Email</TableHead>
                                         <TableHead className="text-gray-700 dark:text-gray-300">Роль</TableHead>
@@ -193,7 +193,7 @@ export function UserListClient({ users: initialUsersProp }: UserListClientProps)
                                 <TableBody>
                                     {paginatedUsers.map((user) => (
                                         <TableRow key={user.id} className="dark:border-gray-700">
-                                            <TableCell className="font-medium text-gray-800 dark:text-gray-200">{user.id}</TableCell>
+                                            {/* <TableCell className="font-medium text-gray-800 dark:text-gray-200">{user.id}</TableCell> */}
                                             <TableCell className="text-gray-800 dark:text-gray-200">{user.fullName || '-'}</TableCell>
                                             <TableCell className="text-gray-800 dark:text-gray-200">{user.email}</TableCell>
                                             <TableCell>

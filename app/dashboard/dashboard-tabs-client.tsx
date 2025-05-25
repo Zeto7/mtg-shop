@@ -19,20 +19,14 @@ interface DashboardTabsClientProps {
     initialOrders: Order[];
 }
 
-export function DashboardTabsClient({
-    initialProducts,
-    categories,
-    allAdditionals,
-    initialUsers,
-    initialOrders,
-}: DashboardTabsClientProps) {
+export function DashboardTabsClient({ initialProducts, categories, allAdditionals, initialUsers, initialOrders }: DashboardTabsClientProps) {
     return (
         <Tabs defaultValue="products" className="w-full">
             <TabsList className="grid w-full grid-cols-5 mb-5">
                 <TabsTrigger value="products">Товары</TabsTrigger>
-                <TabsTrigger value="users">Пользователи</TabsTrigger>
                 <TabsTrigger value="orders">Заказы</TabsTrigger>
                 <TabsTrigger value="stock">Учет Товаров</TabsTrigger>
+                <TabsTrigger value="users">Пользователи</TabsTrigger>
                 <TabsTrigger value="reports">Отчеты</TabsTrigger>
             </TabsList>
 

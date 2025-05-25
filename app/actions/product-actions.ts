@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { prisma } from '@/prisma/prisma-client';
 import { ProductWithRelations } from '@/@types/prisma';
 import { Prisma } from '@prisma/client';
+import { ActionResult } from 'next/dist/server/app-render/types';
 
 const productItemSchema = z.object({
     id: z.number().optional(),
@@ -13,11 +14,11 @@ const productItemSchema = z.object({
 });
 
 const productSchemaBase = z.object({
-    name: z.string().min(3, 'Name must be at least 3 characters'),
+    name: z.string().min(3, 'Имя должно содержать хотя бы 3 символа'),
     description: z.string().optional(),
-    imageUrl: z.string().url('Invalid image URL').or(z.literal('')),
-    price: z.coerce.number().int().min(0, 'Base price must be non-negative'),
-    categoryId: z.coerce.number().int().positive('Category is required'),
+    imageUrl: z.string().url('Неверный URL изображения').or(z.literal('')),
+    price: z.coerce.number().int().min(0, 'Цена не должна быть атрицательной'),
+    categoryId: z.coerce.number().int().positive('Категория обязательна'),
     items: z.array(productItemSchema).length(1, 'Product must have exactly one variation.'),
     additionalIds: z.array(z.coerce.number().int().positive()).optional(),
 });
@@ -184,63 +185,83 @@ export async function updateProductAction(formData: FormData) {
 }
 
 
-export async function deleteProductAction(productId: number) {
+export async function deleteProductAction(productId: number): Promise<ActionResult> {
     console.log(`[DEL_PROD_START] Attempting to delete product ID: ${productId}`);
 
     if (!productId || typeof productId !== 'number' || isNaN(productId)) {
-        console.error(`[DEL_PROD_ERROR] Invalid productId: ${productId}`);
-        return { success: false, message: "Product ID is invalid or missing." };
+        const msg = `Invalid productId: ${productId}`;
+        console.error(`[DEL_PROD_ERROR] ${msg}`);
+        return { success: false, message: "ID товара недействителен или отсутствует." };
     }
 
-    let productBeforeDelete = null;
     try {
-        console.log(`[DEL_PROD_INFO] Fetching product before delete. ID: ${productId}`);
-        productBeforeDelete = await prisma.product.findUnique({ where: { id: productId } });
-        if (!productBeforeDelete) {
-            console.log(`[DEL_PROD_INFO] Product not found for ID: ${productId}. Cannot delete.`);
-            return { success: false, message: "Product not found." };
-        }
-        console.log(`[DEL_PROD_INFO] Product found:`, JSON.stringify(productBeforeDelete));
-    } catch (fetchError: any) {
-        console.error(`[DEL_PROD_ERROR] Error fetching product before delete. ID: ${productId}`, fetchError);
-        return { success: false, message: "Error checking product existence." };
-    }
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Найти все ProductItem, связанные с удаляемым Product
+            const productItemsToDelete = await tx.productItem.findMany({
+                where: { productId: productId },
+                select: { id: true }
+            });
 
+            const productItemIds = productItemsToDelete.map(item => item.id);
 
-    try {
-        console.log(`[DEL_PROD_INFO] Calling prisma.product.delete for ID: ${productId}`);
-        let deleteResult;
-        try {
-            deleteResult = await prisma.product.delete({
+            // 2. Если найдены ProductItem, удалить все CartItem, которые на них ссылаются
+            if (productItemIds.length > 0) {
+                console.log(`[DEL_PROD_TX] Found ProductItem IDs to check in carts:`, productItemIds);
+                const deletedCartItemsCount = await tx.cartItem.deleteMany({
+                    where: {
+                        productItemId: { in: productItemIds }
+                    }
+                });
+                console.log(`[DEL_PROD_TX] Deleted ${deletedCartItemsCount.count} CartItems associated with product ${productId}.`);
+            } else {
+                console.log(`[DEL_PROD_TX] No ProductItems found for product ${productId}, skipping CartItem deletion.`);
+            }
+
+            // 3. Удалить все ProductItem, связанные с удаляемым Product
+            if (productItemIds.length > 0) {
+                console.log(`[DEL_PROD_TX] Deleting related ProductItems for Product ID: ${productId}`);
+                await tx.productItem.deleteMany({
+                    where: { productId: productId },
+                });
+                console.log(`[DEL_PROD_TX] Related ProductItems deleted.`);
+            }
+
+            // 4. Удалить сам Product
+            console.log(`[DEL_PROD_TX] Deleting Product ID: ${productId}`);
+            const deletedProduct = await tx.product.delete({
                 where: { id: productId },
             });
-            console.log(`[DEL_PROD_SUCCESS_DB] Product deleted from DB. Result:`, JSON.stringify(deleteResult));
-        } catch (prismaDeleteError: any) {
-            console.error(`[DEL_PROD_ERROR_PRISMA_DELETE] Prisma.delete failed for ID: ${productId}. Error:`, prismaDeleteError);
-            throw prismaDeleteError;
-        }
+            return deletedProduct;
+        });
 
-        console.log(`[DEL_PROD_INFO] Attempting to revalidate path /dashboard. ID: ${productId}`);
+        console.log(`[DEL_PROD_SUCCESS] Product ID: ${result.id}, its items, and related cart items deleted.`);
+
         revalidatePath('/dashboard');
-        console.log(`[DEL_PROD_SUCCESS_REVALIDATE] Path /dashboard revalidated. ID: ${productId}`);
+        revalidatePath('/');
 
-        return { success: true, message: "Product deleted successfully." };
+        return { success: true, message: "Товар и все связанные с ним записи в корзинах успешно удалены." };
 
-    } catch (error: any) {
-        console.error(`[DEL_PROD_ERROR_MAIN_CATCH] Error during product deletion process. ID: ${productId}.`);
-        console.error("[DEL_PROD_ERROR_MAIN_CATCH_RAW_ERROR_OBJECT]", error);
-        console.error("[DEL_PROD_ERROR_MAIN_CATCH_STACK_TRACE]", error.stack);
-    
+    } catch (error: unknown) {
+        console.error(`[DEL_PROD_ERROR_MAIN_CATCH] ID: ${productId}.`);
+        let errorMessage = "Произошла непредвиденная ошибка при удалении товара.";
+
+        if (error instanceof Error) {
+            console.error("[DEL_PROD_ERROR_MAIN_CATCH_MESSAGE]", error.message);
+            errorMessage = error.message;
+        } else {
+            console.error("[DEL_PROD_ERROR_MAIN_CATCH_RAW_STRINGIFIED]", String(error));
+        }
+
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            console.error(`[DEL_PROD_ERROR_MAIN_CATCH] Prisma Error Code: ${error.code}. ID: ${productId}`);
+            console.error(`[DEL_PROD_ERROR_MAIN_CATCH] Prisma Error Code: ${error.code}.`);
             if (error.code === 'P2003') {
-                return { success: false, message: "Cannot delete product. It might be referenced in orders or elsewhere." };
-            }
-            if (error.code === 'P2025') {
-                return { success: false, message: "Product not found (error during delete)." };
+                errorMessage = "Невозможно удалить товар, он связан с другими важными записями (кроме корзин).";
+            } else if (error.code === 'P2025') {
+                errorMessage = "Товар или связанные с ним элементы не найдены для удаления.";
+            } else {
+                errorMessage = `Ошибка базы данных (код: ${error.code}) при удалении товара.`;
             }
         }
-        const errorMessage = error.message || "An unexpected error occurred while deleting the product.";
         return { success: false, message: errorMessage };
     }
 }
