@@ -7,6 +7,27 @@ import { ProductWithRelations } from '@/@types/prisma';
 import { Prisma } from '@prisma/client';
 import { ActionResult } from 'next/dist/server/app-render/types';
 
+import fs from 'fs/promises';
+import path from 'path';
+import { stat, mkdir, rm } from 'fs/promises';
+
+const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'products');
+
+async function ensureUploadDirExists() {
+    try {
+        await stat(UPLOAD_DIR);
+    } catch (error: any) {
+        if (error.code === 'ENOENT') {
+            await mkdir(UPLOAD_DIR, { recursive: true });
+            console.log(`Created upload directory: ${UPLOAD_DIR}`);
+        } else {
+            console.error("Error checking/creating upload directory:", error);
+            throw error;
+        }
+    }
+}
+
+
 const productItemSchema = z.object({
     id: z.number().optional(),
     amount: z.coerce.number().int().min(0).max(1, "Amount must be 0 or 1").optional().nullable(),
@@ -16,7 +37,7 @@ const productItemSchema = z.object({
 const productSchemaBase = z.object({
     name: z.string().min(3, 'Имя должно содержать хотя бы 3 символа'),
     description: z.string().optional(),
-    imageUrl: z.string().url('Неверный URL изображения').or(z.literal('')),
+    imageUrl: z.string().url('Неверный URL изображения').or(z.literal('')).optional(),
     price: z.coerce.number().int().min(0, 'Цена не должна быть атрицательной'),
     categoryId: z.coerce.number().int().positive('Категория обязательна'),
     items: z.array(productItemSchema).length(1, 'Product must have exactly one variation.'),
@@ -26,11 +47,6 @@ const productSchemaBase = z.object({
 const createProductSchema = productSchemaBase;
 const updateProductSchema = productSchemaBase.extend({
     id: z.coerce.number().int().positive(),
-});
-
-const updateProductStockSchema = z.object({
-    productId: z.number().int().positive(),
-    newAmount: z.coerce.number().int().min(0),
 });
 
 export async function getProducts(): Promise<ProductWithRelations[]> {
@@ -50,9 +66,12 @@ export async function getAllAdditionals() {
     catch (error) { console.error("Failed to fetch additionals:", error); return []; }
 }
 
+
 function parseFormData(formData: FormData) {
     const rawData = Object.fromEntries(formData.entries());
     let parsedData: any = { ...rawData };
+    delete parsedData.imageFile;
+
 
     if (rawData.items && typeof rawData.items === 'string') {
         try { parsedData.items = JSON.parse(rawData.items); }
@@ -69,9 +88,7 @@ function parseFormData(formData: FormData) {
     } else if (!rawData.additionalIds) { parsedData.additionalIds = []; }
 
     if (rawData.id) parsedData.id = parseInt(rawData.id as string, 10);
-
     if (rawData.price) parsedData.price = parseInt(rawData.price as string, 10);
-
     if (rawData.categoryId) parsedData.categoryId = parseInt(rawData.categoryId as string, 10);
 
     if (parsedData.items && Array.isArray(parsedData.items)) {
@@ -82,27 +99,90 @@ function parseFormData(formData: FormData) {
                     ? parseInt(String(item.amount), 10) : 0,
         }));
     }
+    // Если imageUrl пустой или отсутствует, Zod обработает это как undefined (если optional) или ''
     return parsedData;
 }
 
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+
+async function handleImageUpload(imageFile: File | null, existingImageUrl?: string | null): Promise<{ imageUrl?: string; error?: string }> {
+    if (!imageFile) {
+        return { imageUrl: existingImageUrl || '' };
+    }
+
+    if (imageFile.size > MAX_FILE_SIZE) {
+        return { error: 'Размер файла не должен превышать 5MB.' };
+    }
+    if (!ALLOWED_IMAGE_TYPES.includes(imageFile.type)) {
+        return { error: 'Недопустимый тип файла. Разрешены: JPG, PNG, WEBP, GIF.' };
+    }
+
+    await ensureUploadDirExists();
+
+    // Удаляем старый файл, если он есть и отличается от нового
+    if (existingImageUrl) {
+        const oldFileName = path.basename(existingImageUrl);
+        const oldFilePath = path.join(UPLOAD_DIR, oldFileName);
+        if (existingImageUrl.startsWith('/uploads/products/')) {
+            try {
+                await stat(oldFilePath);
+                await rm(oldFilePath);
+                console.log(`Deleted old image: ${oldFilePath}`);
+            } catch (e: any) {
+                if (e.code !== 'ENOENT') {
+                     console.error(`Could not delete old image ${oldFilePath}:`, e);
+                }
+            }
+        }
+    }
+
+
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    const fileExtension = path.extname(imageFile.name) || `.${imageFile.type.split('/')[1]}`;
+    const filename = `${imageFile.name.replace(/\.[^/.]+$/, "")}-${uniqueSuffix}${fileExtension}`;
+    const filePath = path.join(UPLOAD_DIR, filename);
+    
+    try {
+        const buffer = Buffer.from(await imageFile.arrayBuffer());
+        await fs.writeFile(filePath, buffer);
+        return { imageUrl: `/uploads/products/${filename}` };
+    } catch (e) {
+        console.error("Error saving image:", e);
+        return { error: "Не удалось сохранить изображение." };
+    }
+}
+
+
 export async function addProductAction(formData: FormData) {
     const parsedData = parseFormData(formData);
-    const validationResult = createProductSchema.safeParse(parsedData);
+    const imageFile = formData.get('imageFile') as File | null;
 
+    const validationResult = createProductSchema.safeParse(parsedData);
     if (!validationResult.success) {
         console.error("Validation failed (create):", validationResult.error.format());
         return { success: false, errors: validationResult.error.flatten().fieldErrors };
     }
 
-    const { items, additionalIds, ...productData } = validationResult.data;
+    const imageUploadResult = await handleImageUpload(imageFile);
+    if (imageUploadResult.error) {
+        return { success: false, errors: { imageFile: [imageUploadResult.error] } };
+    }
+    
+    const finalImageUrl = imageUploadResult.imageUrl || validationResult.data.imageUrl || '';
+
+
+    const { items, additionalIds, ...productDataFromZod } = validationResult.data;
     const showAdditionals = items[0].amount === 1;
 
     try {
         const newProduct = await prisma.product.create({
             data: {
-                ...productData,
-                imageUrl: productData.imageUrl || '',
-                description: productData.description || null,
+                ...productDataFromZod,
+                imageUrl: finalImageUrl,
+                description: productDataFromZod.description || null,
                 items: {
                     create: items.map(item => ({
                         price: item.price,
@@ -127,6 +207,8 @@ export async function addProductAction(formData: FormData) {
 
 export async function updateProductAction(formData: FormData) {
     const parsedData = parseFormData(formData);
+    const imageFile = formData.get('imageFile') as File | null;
+
     const validationResult = updateProductSchema.safeParse(parsedData);
 
     if (!validationResult.success) {
@@ -134,18 +216,27 @@ export async function updateProductAction(formData: FormData) {
         return { success: false, errors: validationResult.error.flatten().fieldErrors };
     }
 
-    const { id, items, additionalIds, ...productData } = validationResult.data;
+    const { id, items, additionalIds, ...productDataFromZod } = validationResult.data;
+
+    const existingProduct = await prisma.product.findUnique({
+        where: { id },
+        select: { imageUrl: true, items: true }
+    });
+
+    if (!existingProduct) return { success: false, message: "Product not found." };
+
+    const imageUploadResult = await handleImageUpload(imageFile, existingProduct.imageUrl);
+    if (imageUploadResult.error) {
+        return { success: false, errors: { imageFile: [imageUploadResult.error] } };
+    }
+    
+    const finalImageUrl = imageUploadResult.imageUrl !== undefined ? imageUploadResult.imageUrl : (productDataFromZod.imageUrl || '');
+
+
     const submittedItem = items[0];
     const showAdditionals = submittedItem.amount === 1;
 
     try {
-        const existingProduct = await prisma.product.findUnique({
-            where: { id },
-            include: { items: true }
-        });
-
-        if (!existingProduct) return { success: false, message: "Product not found." };
-
         const itemOperations: any = {};
         if (existingProduct.items.length > 0) {
             itemOperations.update = [{
@@ -162,9 +253,9 @@ export async function updateProductAction(formData: FormData) {
         const updatedProduct = await prisma.product.update({
             where: { id },
             data: {
-                ...productData,
-                imageUrl: productData.imageUrl || '',
-                description: productData.description || null,
+                ...productDataFromZod,
+                imageUrl: finalImageUrl,
+                description: productDataFromZod.description || null,
                 items: itemOperations,
                 additionals: {
                     set: (showAdditionals && additionalIds && additionalIds.length > 0)
@@ -180,6 +271,9 @@ export async function updateProductAction(formData: FormData) {
         return { success: true, product: updatedProduct };
     } catch (error) {
         console.error("Failed to update product:", error);
+        if (error instanceof Error && error.message.includes("ENOENT")) {
+            console.warn("Attempted to delete a non-existent old image, proceeding with update.");
+        }
         return { success: false, message: "Database error: Failed to update product." };
     }
 }
@@ -195,38 +289,40 @@ export async function deleteProductAction(productId: number): Promise<ActionResu
     }
 
     try {
+        const productToDelete = await prisma.product.findUnique({
+            where: { id: productId },
+            select: { imageUrl: true }
+        });
+
+        if (!productToDelete) {
+            console.log(`[DEL_PROD_INFO] Product with ID: ${productId} not found for deletion.`);
+            return { success: false, message: "Товар не найден." };
+        }
+
+
         const result = await prisma.$transaction(async (tx) => {
-            // 1. Найти все ProductItem, связанные с удаляемым Product
             const productItemsToDelete = await tx.productItem.findMany({
                 where: { productId: productId },
                 select: { id: true }
             });
-
             const productItemIds = productItemsToDelete.map(item => item.id);
 
-            // 2. Если найдены ProductItem, удалить все CartItem, которые на них ссылаются
             if (productItemIds.length > 0) {
                 console.log(`[DEL_PROD_TX] Found ProductItem IDs to check in carts:`, productItemIds);
                 const deletedCartItemsCount = await tx.cartItem.deleteMany({
-                    where: {
-                        productItemId: { in: productItemIds }
-                    }
+                    where: { productItemId: { in: productItemIds } }
                 });
                 console.log(`[DEL_PROD_TX] Deleted ${deletedCartItemsCount.count} CartItems associated with product ${productId}.`);
             } else {
                 console.log(`[DEL_PROD_TX] No ProductItems found for product ${productId}, skipping CartItem deletion.`);
             }
 
-            // 3. Удалить все ProductItem, связанные с удаляемым Product
             if (productItemIds.length > 0) {
                 console.log(`[DEL_PROD_TX] Deleting related ProductItems for Product ID: ${productId}`);
-                await tx.productItem.deleteMany({
-                    where: { productId: productId },
-                });
+                await tx.productItem.deleteMany({ where: { productId: productId } });
                 console.log(`[DEL_PROD_TX] Related ProductItems deleted.`);
             }
 
-            // 4. Удалить сам Product
             console.log(`[DEL_PROD_TX] Deleting Product ID: ${productId}`);
             const deletedProduct = await tx.product.delete({
                 where: { id: productId },
@@ -234,12 +330,26 @@ export async function deleteProductAction(productId: number): Promise<ActionResu
             return deletedProduct;
         });
 
-        console.log(`[DEL_PROD_SUCCESS] Product ID: ${result.id}, its items, and related cart items deleted.`);
+        if (productToDelete.imageUrl && productToDelete.imageUrl.startsWith('/uploads/products/')) {
+            const filename = path.basename(productToDelete.imageUrl);
+            const filePath = path.join(UPLOAD_DIR, filename);
+            try {
+                await ensureUploadDirExists();
+                await rm(filePath);
+                console.log(`[DEL_PROD_SUCCESS] Deleted image file: ${filePath}`);
+            } catch (e: any) {
+                if (e.code !== 'ENOENT') {
+                    console.error(`[DEL_PROD_WARN] Could not delete image file ${filePath}:`, e);
+                } else {
+                    console.log(`[DEL_PROD_INFO] Image file ${filePath} not found, likely already deleted.`);
+                }
+            }
+        }
 
+        console.log(`[DEL_PROD_SUCCESS] Product ID: ${result.id}, its items, and related cart items deleted.`);
         revalidatePath('/dashboard');
         revalidatePath('/');
-
-        return { success: true, message: "Товар и все связанные с ним записи в корзинах успешно удалены." };
+        return { success: true, message: "Товар и все связанные с ним записи (включая изображение) успешно удалены." };
 
     } catch (error: unknown) {
         console.error(`[DEL_PROD_ERROR_MAIN_CATCH] ID: ${productId}.`);
@@ -266,12 +376,16 @@ export async function deleteProductAction(productId: number): Promise<ActionResu
     }
 }
 
+
 type UpdateStockResult = {
     success: boolean;
     message?: string;
     product?: { id: number; amount: number | null };
 };
-
+const updateProductStockSchema = z.object({
+    productId: z.number().int().positive(),
+    newAmount: z.coerce.number().int().min(0),
+});
 export async function updateProductStock(
     data: { productId: number; newAmount: number }
 ): Promise<UpdateStockResult> {

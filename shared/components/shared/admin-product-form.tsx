@@ -11,15 +11,17 @@ import { Textarea } from "@/shared/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Checkbox } from "@/shared/components/ui/checkbox";
 import { toast } from 'react-hot-toast';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, ChangeEvent, useRef } from 'react';
 import { addProductAction, updateProductAction } from '@/app/actions/product-actions';
 import { Switch } from "@/shared/components/ui/switch";
+import Image from 'next/image';
+import { UploadCloud, Pencil, X } from 'lucide-react';
 
 const formSchema = z.object({
     id: z.number().optional(),
     name: z.string().min(3),
     description: z.string().optional(),
-    imageUrl: z.string().url().or(z.literal('')),
+    imageUrl: z.string().url().or(z.literal('')).optional(),
     categoryId: z.coerce.number().int().positive(),
     items: z.array(z.object({
         id: z.number().optional(),
@@ -44,6 +46,9 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
     const [isSubmitting, setIsSubmitting] = useState(false);
     const isEditMode = !!product;
     const [addonSearchTerm, setAddonSearchTerm] = useState('');
+    const [imagePreview, setImagePreview] = useState<string | null>(product?.imageUrl ?? null);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { register, handleSubmit, formState: { errors }, control, reset, watch, setValue } = useForm<ProductFormData>({
         resolver: zodResolver(formSchema),
@@ -66,6 +71,42 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
         },
     });
 
+    useEffect(() => {
+        if (product?.imageUrl) {
+            setImagePreview(product.imageUrl);
+        } else {
+            setImagePreview(null);
+        }
+        setImageFile(null);
+    }, [product]);
+
+
+    const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setImageFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+            setValue('imageUrl', '');
+        } else {
+            setImageFile(null);
+            setImagePreview(product?.imageUrl ?? null);
+            setValue('imageUrl', product?.imageUrl ?? '');
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
+        setValue('imageUrl', '');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
     const showAdditionalsSection = watch('items.0.amount') === 1;
 
     const filteredAdditionals = useMemo(() => {
@@ -87,11 +128,18 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
 
         Object.entries(finalData).forEach(([key, value]) => {
             if (key !== 'items' && key !== 'additionalIds' && value !== undefined && value !== null) {
+                 if (key === 'imageUrl' && imageFile) {
+                    return;
+                 }
                 formData.append(key, String(value));
             }
         });
         formData.append('items', JSON.stringify(finalData.items));
         formData.append('additionalIds', JSON.stringify(finalData.additionalIds || []));
+
+        if (imageFile) {
+            formData.append('imageFile', imageFile);
+        }
 
         try {
             let result;
@@ -104,6 +152,7 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
             if (result.success) {
                 toast.success(`Товар ${isEditMode ? 'обновлен' : 'добавлен'} успешно!`);
                 const productFromResult = result.product;
+                
                 reset({
                     id: productFromResult?.id ?? finalData.id,
                     name: productFromResult?.name ?? finalData.name,
@@ -117,6 +166,9 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
                     }],
                     additionalIds: productFromResult?.additionals?.map(a => a.id) ?? finalData.additionalIds,
                 });
+                setImageFile(null);
+                setImagePreview(productFromResult?.imageUrl ?? null);
+
                 onSuccess?.();
             } else {
                 if (result.errors) {
@@ -124,6 +176,8 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
                         if (messages) {
                             if (field === 'price' && messages) {
                                 toast.error(`Цена: ${(messages as string[]).join(', ')}`);
+                            } else if (field === 'imageFile' && messages) {
+                                toast.error(`Файл изображения: ${(messages as string[]).join(', ')}`);
                             } else if (field === 'items' && typeof messages === 'object' && !Array.isArray(messages)) {
                                  Object.entries(messages as Record<string, any[]>).forEach(([index, itemMessagesObj]) => {
                                     if (itemMessagesObj && typeof itemMessagesObj === 'object') {
@@ -199,10 +253,68 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
             />
             
             <div>
-                <Label htmlFor="imageUrl">URL изображения</Label>
-                <Input id="imageUrl" {...register('imageUrl')} aria-invalid={errors.imageUrl ? "true" : "false"} />
+                <Label htmlFor="imageFile">Изображение продукта</Label>
+                <div className="mt-2 flex justify-center"> {/* Centering the content */}
+                    {imagePreview ? (
+                        <div className="relative group w-48 h-48 border border-gray-300 rounded-md overflow-hidden bg-gray-50"> {/* Added subtle bg for contain */}
+                            <Image 
+                                src={imagePreview} 
+                                alt="Превью продукта" 
+                                layout="fill" 
+                                objectFit="contain" /* Image will be contained within bounds, preserving aspect ratio */
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 flex items-center justify-center space-x-3 transition-all duration-300">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="text-gray-700 bg-white hover:bg-gray-50 border-gray-300 p-2 rounded-full opacity-0 group-hover:opacity-100 transform group-hover:scale-110 transition-all duration-200"
+                                    aria-label="Изменить изображение"
+                                >
+                                    <Pencil className="h-5 w-5" />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="destructive" 
+                                    size="icon"
+                                    onClick={handleRemoveImage}
+                                    className="p-2 rounded-full opacity-0 group-hover:opacity-100 transform group-hover:scale-110 transition-all duration-200"
+                                    aria-label="Удалить изображение"
+                                >
+                                    <X className="h-5 w-5" />
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div
+                            onClick={() => fileInputRef.current?.click()}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }}
+                            role="button"
+                            tabIndex={0}
+                            className="flex flex-col justify-center items-center w-48 h-48 p-4 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors duration-200" /* Matched w-48 h-48, adjusted padding */
+                            aria-label="Загрузить изображение продукта"
+                        >
+                            <UploadCloud className="mx-auto h-10 w-10 text-gray-400 group-hover:text-blue-500 transition-colors" /> {/* Adjusted icon size */}
+                            <p className="mt-2 text-sm text-center text-gray-600"> {/* Added text-center */}
+                                <span className="font-semibold text-blue-600 hover:text-blue-700">Нажмите, чтобы загрузить</span>
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">PNG, JPG, WEBP</p>
+                        </div>
+                    )}
+                </div>
+                <Input
+                    ref={fileInputRef}
+                    id="imageFile" 
+                    type="file" 
+                    accept="image/png, image/jpeg, image/webp" 
+                    onChange={handleImageChange}
+                    className="hidden"
+                />
+                <input type="hidden" {...register('imageUrl')} /> 
                 {errors.imageUrl && <p className="text-red-500 text-sm mt-1">{errors.imageUrl.message}</p>}
             </div>
+
 
             <div>
                 <Label htmlFor="description">Описание</Label>
