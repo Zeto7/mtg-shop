@@ -21,9 +21,6 @@ export const AuthModal: React.FC<Props> = ({open, onClose}) => {
         onClose();
     };
 
-
-    // TODO : исправить форму регистрации
-
     return <div>
         <Dialog open={open} onOpenChange={handleClose}>
             <DialogContent className="w-[450px] bg-white p-10">

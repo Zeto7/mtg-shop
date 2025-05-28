@@ -30,9 +30,7 @@ export async function getOrders(): Promise<Order[]> {
     }
 }
 
-export async function updateOrderStatus(
-    data: { orderId: number; newStatus: OrderStatus }
-): Promise<OrderActionResult> {
+export async function updateOrderStatus( data: { orderId: number; newStatus: OrderStatus } ): Promise<OrderActionResult> {
 
     const validation = updateStatusSchema.safeParse(data);
     if (!validation.success) {

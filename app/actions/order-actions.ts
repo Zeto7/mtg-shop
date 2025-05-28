@@ -3,11 +3,8 @@
 import { prisma } from '@/prisma/prisma-client';
 import { CheckoutFormValues } from "@/shared/components/shared/checkout-components/checkout-form-schema";
 import { getUserSession } from "@/shared/lib/get-user-session";
-import { sendEmail } from "@/shared/lib/send-email";
-import OrderConfirmationEmail from '@/shared/components/shared/email-templates/OrderConfirmationEmail';
-import { OrderStatus, Prisma } from "@prisma/client";
+import { OrderStatus} from "@prisma/client";
 import { cookies } from "next/headers";
-import React from 'react';
 
 type CreateOrderResult = {
     success: boolean;

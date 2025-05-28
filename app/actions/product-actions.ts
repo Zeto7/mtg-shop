@@ -57,10 +57,12 @@ export async function getProducts(): Promise<ProductWithRelations[]> {
         });
     } catch (error) { console.error("Failed to fetch products:", error); return []; }
 }
+
 export async function getCategories() {
     try { return await prisma.category.findMany({ orderBy: { name: 'asc' } }); }
     catch (error) { console.error("Failed to fetch categories:", error); return []; }
 }
+
 export async function getAllAdditionals() {
     try { return await prisma.additional.findMany({ orderBy: { name: 'asc' } }); }
     catch (error) { console.error("Failed to fetch additionals:", error); return []; }
@@ -88,7 +90,9 @@ function parseFormData(formData: FormData) {
     } else if (!rawData.additionalIds) { parsedData.additionalIds = []; }
 
     if (rawData.id) parsedData.id = parseInt(rawData.id as string, 10);
+
     if (rawData.price) parsedData.price = parseInt(rawData.price as string, 10);
+
     if (rawData.categoryId) parsedData.categoryId = parseInt(rawData.categoryId as string, 10);
 
     if (parsedData.items && Array.isArray(parsedData.items)) {
@@ -99,7 +103,6 @@ function parseFormData(formData: FormData) {
                     ? parseInt(String(item.amount), 10) : 0,
         }));
     }
-    // Если imageUrl пустой или отсутствует, Zod обработает это как undefined (если optional) или ''
     return parsedData;
 }
 
@@ -122,7 +125,6 @@ async function handleImageUpload(imageFile: File | null, existingImageUrl?: stri
 
     await ensureUploadDirExists();
 
-    // Удаляем старый файл, если он есть и отличается от нового
     if (existingImageUrl) {
         const oldFileName = path.basename(existingImageUrl);
         const oldFilePath = path.join(UPLOAD_DIR, oldFileName);

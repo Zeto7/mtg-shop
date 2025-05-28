@@ -121,7 +121,7 @@ export async function generateReport(
                 lastUpdatedAt: product.updatedAt,
             }));
 
-        } else { // Логика для отчетов 'sales' и 'rating'
+        } else {
             const orders = await prisma.order.findMany({
                 where: {
                     status: OrderStatus.SUCCEDED,

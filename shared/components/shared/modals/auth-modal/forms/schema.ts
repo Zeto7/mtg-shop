@@ -18,7 +18,6 @@ export const formRegisterSchema = z.object({
     confirmPassword: z.string()
       .min(8, { message: 'Подтверждение пароля обязательно' }),
   })
-  // Добавляем проверку на совпадение паролей
   .refine((data) => data.password === data.confirmPassword, {
     message: "Пароли не совпадают",
     path: ["confirmPassword"],

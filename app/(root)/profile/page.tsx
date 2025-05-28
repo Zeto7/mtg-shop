@@ -10,8 +10,6 @@ export default async function ProfilePage() {
         return redirect('/not-auth');
     }
 
-    // TODO : исправить id
-
     const user = await prisma.user.findFirst({ where: { id: session } });
 
     if (!user) {

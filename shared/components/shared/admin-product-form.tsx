@@ -254,14 +254,14 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
             
             <div>
                 <Label htmlFor="imageFile">Изображение продукта</Label>
-                <div className="mt-2 flex justify-center"> {/* Centering the content */}
+                <div className="mt-2 flex justify-center">
                     {imagePreview ? (
-                        <div className="relative group w-48 h-48 border border-gray-300 rounded-md overflow-hidden bg-gray-50"> {/* Added subtle bg for contain */}
+                        <div className="relative group w-48 h-48 border border-gray-300 rounded-md overflow-hidden bg-gray-50">
                             <Image 
                                 src={imagePreview} 
                                 alt="Превью продукта" 
                                 layout="fill" 
-                                objectFit="contain" /* Image will be contained within bounds, preserving aspect ratio */
+                                objectFit="contain"
                             />
                             <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 flex items-center justify-center space-x-3 transition-all duration-300">
                                 <Button
@@ -292,11 +292,11 @@ export function AdminProductForm({ product, categories, allAdditionals, classNam
                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }}
                             role="button"
                             tabIndex={0}
-                            className="flex flex-col justify-center items-center w-48 h-48 p-4 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors duration-200" /* Matched w-48 h-48, adjusted padding */
+                            className="flex flex-col justify-center items-center w-48 h-48 p-4 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors duration-200"
                             aria-label="Загрузить изображение продукта"
                         >
-                            <UploadCloud className="mx-auto h-10 w-10 text-gray-400 group-hover:text-blue-500 transition-colors" /> {/* Adjusted icon size */}
-                            <p className="mt-2 text-sm text-center text-gray-600"> {/* Added text-center */}
+                            <UploadCloud className="mx-auto h-10 w-10 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                            <p className="mt-2 text-sm text-center text-gray-600">
                                 <span className="font-semibold text-blue-600 hover:text-blue-700">Нажмите, чтобы загрузить</span>
                             </p>
                             <p className="text-xs text-gray-500 mt-1">PNG, JPG, WEBP</p>

@@ -84,7 +84,6 @@ export async function addUserAction(formData: FormData): Promise<ActionResult> {
 
 export async function updateUserAction(formData: FormData): Promise<ActionResult> {
     const rawData = Object.fromEntries(formData.entries());
-     // Приводим id к числу перед валидацией
      if (rawData.id && typeof rawData.id === 'string') {
          rawData.id = parseInt(rawData.id, 10);
      }
@@ -200,7 +199,6 @@ export async function getCurrentUserProfile(): Promise<ActionResult> {
   
 
   export async function updateMyProfile(data: UpdateProfileData): Promise<ActionResult> {
-      // 1. Валидация входных данных
       const validation = updateProfileSchema.safeParse(data);
       if (!validation.success) {
           return { success: false, message: "Ошибка валидации данных профиля", errors: validation.error.format() }; 
@@ -208,14 +206,12 @@ export async function getCurrentUserProfile(): Promise<ActionResult> {
       const { fullName, password } = validation.data;
   
       try {
-          // 2. Получаем сессию ТЕКУЩЕГО пользователя
           const currentUser = await getUserSession();
           if (!currentUser?.id) {
               return { success: false, message: "Пользователь не аутентифицирован." };
           }
           const userId = Number(currentUser.id);
   
-          // 3. Находим пользователя
           const findUser = await prisma.user.findUnique({
               where: { id: userId },
               select: { id: true }
@@ -225,7 +221,6 @@ export async function getCurrentUserProfile(): Promise<ActionResult> {
                return { success: false, message: 'Пользователь для обновления не найден.' };
           }
   
-          // 4. Готовим данные для обновления
           const dataToUpdate: Prisma.UserUpdateInput = {
               fullName: fullName,
           };
@@ -234,13 +229,11 @@ export async function getCurrentUserProfile(): Promise<ActionResult> {
               dataToUpdate.password = hashSync(password, 10);
           }
   
-          // 5. Обновляем пользователя в БД
           await prisma.user.update({
               where: { id: userId },
               data: dataToUpdate,
           });
   
-          // 6. Ревалидируем путь к странице профиля
           revalidatePath('/profile');
   
           return { success: true };
