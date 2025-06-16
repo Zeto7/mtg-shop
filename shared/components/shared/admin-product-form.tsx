@@ -21,7 +21,11 @@ const formSchema = z.object({
     id: z.number().optional(),
     name: z.string().min(3),
     description: z.string().optional(),
-    imageUrl: z.string().url().or(z.literal('')).optional(),
+    imageUrl: z.union([
+        z.string().url(),
+        z.string().startsWith('/'),
+        z.literal('')
+    ]).optional(),
     categoryId: z.coerce.number().int().positive(),
     items: z.array(z.object({
         id: z.number().optional(),

@@ -40,7 +40,7 @@ export const Filters: React.FC<Props> = ({ classname }) => {
             </div>
 
             <CheckboxFiltersGroup
-                title="Категории"
+                title="Выпуски:"
                 name="additionals"
                 className="mt-5"
                 limit={5}

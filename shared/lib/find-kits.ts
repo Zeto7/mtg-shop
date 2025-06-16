@@ -1,5 +1,4 @@
 import { prisma } from "@/prisma/prisma-client";
-import { Price } from "../components/shared/cart-item-details";
 
 export interface GetSearchParams {
     query?: string;

@@ -37,7 +37,13 @@ const productItemSchema = z.object({
 const productSchemaBase = z.object({
     name: z.string().min(3, 'Имя должно содержать хотя бы 3 символа'),
     description: z.string().optional(),
-    imageUrl: z.string().url('Неверный URL изображения').or(z.literal('')).optional(),
+    
+    imageUrl: z.union([
+        z.string().url({ message: 'Неверный формат внешнего URL' }),
+        z.string().startsWith('/', { message: 'Внутренний путь должен начинаться с /' }),
+        z.literal('')
+    ]).optional(),
+
     price: z.coerce.number().int().min(0, 'Цена не должна быть атрицательной'),
     categoryId: z.coerce.number().int().positive('Категория обязательна'),
     items: z.array(productItemSchema).length(1, 'Product must have exactly one variation.'),
@@ -232,7 +238,8 @@ export async function updateProductAction(formData: FormData) {
         return { success: false, errors: { imageFile: [imageUploadResult.error] } };
     }
     
-    const finalImageUrl = imageUploadResult.imageUrl !== undefined ? imageUploadResult.imageUrl : (productDataFromZod.imageUrl || '');
+
+    const finalImageUrl = imageFile ? (imageUploadResult.imageUrl || '') : (productDataFromZod.imageUrl ?? '');
 
 
     const submittedItem = items[0];
@@ -287,7 +294,7 @@ export async function deleteProductAction(productId: number): Promise<ActionResu
     if (!productId || typeof productId !== 'number' || isNaN(productId)) {
         const msg = `Invalid productId: ${productId}`;
         console.error(`[DEL_PROD_ERROR] ${msg}`);
-        return { success: false, message: "ID товара недействителен или отсутствует." };
+        return { success: false, message: "Номер товара недействителен или отсутствует." };
     }
 
     try {

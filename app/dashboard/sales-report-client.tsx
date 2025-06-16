@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/shared/components/ui/alert";
 import { Label } from "@/shared/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/shared/components/ui/radio-group";
-import { generateReport, SalesReportItem, RatingReportItem, StockReportItem, ReportResult } from '@/app/actions/report-actions'; // Уточните путь!
+import { generateReport, SalesReportItem, RatingReportItem, StockReportItem, ReportResult } from '@/app/actions/report-actions';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 
@@ -89,7 +89,7 @@ export function SalesReportClient() {
         let fileNameSuffix: string;
 
         if (generatedReportType === 'sales') {
-            headers = ["ID Товара", "Название товара", "Кол-во продано (шт.)", "Средняя цена (Br)", "Общая выручка (Br)"];
+            headers = ["Номер товара", "Название товара", "Кол-во продано (шт.)", "Средняя цена (Br)", "Общая сумма (Br)"];
             dataForSheet = (reportData as SalesReportItem[]).map(item => [
                 item.productId, item.productName, item.quantitySold,
                 parseFloat((item.averagePrice).toFixed(2)),
@@ -97,15 +97,19 @@ export function SalesReportClient() {
             ]);
             sheetName = "Отчет о продажах";
             fileNameSuffix = "sales_report";
-        } else if (generatedReportType === 'rating') {
-            headers = ["Место", "ID Товара", "Название товара", "Кол-во продано (шт.)"];
+        }
+
+        else if (generatedReportType === 'rating') {
+            headers = ["Место", "Номер товара", "Название товара", "Кол-во продано (шт.)"];
             dataForSheet = (reportData as RatingReportItem[]).map((item, index) => [
                 index + 1, item.productId, item.productName, item.quantitySold
             ]);
             sheetName = "Рейтинг товаров (Топ-20)";
             fileNameSuffix = "rating_report";
-        } else if (generatedReportType === 'stock') {
-            headers = ["ID Товара", "Название товара", "Текущий остаток (шт.)", "Последнее обновление"];
+        }
+
+        else if (generatedReportType === 'stock') {
+            headers = ["Номер товара", "Название товара", "Текущий остаток (шт.)", "Последнее обновление"];
             dataForSheet = (reportData as StockReportItem[]).map(item => [
                 item.productId,
                 item.productName,
@@ -114,7 +118,9 @@ export function SalesReportClient() {
             ]);
             sheetName = "Отчет по остаткам";
             fileNameSuffix = "stock_report";
-        } else {
+        }
+         
+        else {
             toast.error("Неизвестный тип отчета для экспорта.");
             return;
         }
@@ -255,7 +261,7 @@ export function SalesReportClient() {
                                          <TableRow className="dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
                                              {/* Заголовки STOCK */}
                                              {generatedReportType === 'stock' && <>
-                                                 <TableHead className="text-gray-600 dark:text-gray-300">ID Товара</TableHead>
+                                                 <TableHead className="text-gray-600 dark:text-gray-300">Номер товара</TableHead>
                                                  <TableHead className="min-w-[200px] text-gray-600 dark:text-gray-300">Название товара</TableHead>
                                                  <TableHead className="text-center text-gray-600 dark:text-gray-300">Остаток (шт.)</TableHead>
                                                  <TableHead className="text-right text-gray-600 dark:text-gray-300">Обновлено</TableHead>
@@ -264,14 +270,14 @@ export function SalesReportClient() {
                                              {generatedReportType === 'rating' && <TableHead className="text-gray-600 dark:text-gray-300">Место</TableHead>}
                                              {/* Общие заголовки SALES и RATING */}
                                              {(generatedReportType === 'sales' || generatedReportType === 'rating') && <>
-                                                 <TableHead className="text-gray-600 dark:text-gray-300">ID Товара</TableHead>
+                                                 <TableHead className="text-gray-600 dark:text-gray-300">Номер товара</TableHead>
                                                  <TableHead className="min-w-[200px] text-gray-600 dark:text-gray-300">Название товара</TableHead>
                                                  <TableHead className="text-center text-gray-600 dark:text-gray-300">Кол-во продано</TableHead>
                                              </>}
                                              {/* Заголовки SALES */}
                                              {generatedReportType === 'sales' && <>
                                                  <TableHead className="text-right text-gray-600 dark:text-gray-300">Средняя цена</TableHead>
-                                                 <TableHead className="text-right text-gray-600 dark:text-gray-300">Общая выручка</TableHead>
+                                                 <TableHead className="text-right text-gray-600 dark:text-gray-300">Общая сумма</TableHead>
                                              </>}
                                          </TableRow>
                                      </TableHeader>

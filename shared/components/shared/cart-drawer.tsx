@@ -12,7 +12,6 @@ import { Title } from "./title";
 import { cn } from "@/shared/lib/utils";
 import { useCart } from "@/shared/hooks/use-cart";
 
-    // TODO : починить добавление товаров к корзину
 export const CartDrawer: React.FC<React.PropsWithChildren> = ({ children}) => {
         const {totalAmount, updateItemQuantity, items, removeCartItem} = useCart();
 

@@ -163,7 +163,7 @@ export function ProductStockListClient({ products: initialProductsProp }: Produc
                         <Table>
                             <TableHeader>
                                 <TableRow className="dark:border-gray-600">
-                                    <TableHead className="w-[80px] text-gray-700 dark:text-gray-300">ID</TableHead>
+                                    <TableHead className="w-[80px] text-gray-700 dark:text-gray-300">Номер</TableHead>
                                     <TableHead className="text-gray-700 dark:text-gray-300">Название Товара</TableHead>
                                     <TableHead className="text-right w-[200px] text-gray-700 dark:text-gray-300">Остаток</TableHead>
                                 </TableRow>

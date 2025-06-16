@@ -184,8 +184,8 @@ export function UserListClient({ users: initialUsersProp }: UserListClientProps)
                                         <TableHead className="text-gray-700 dark:text-gray-300">Полное имя</TableHead>
                                         <TableHead className="text-gray-700 dark:text-gray-300">Email</TableHead>
                                         <TableHead className="text-gray-700 dark:text-gray-300">Роль</TableHead>
-                                        <TableHead className="text-gray-700 dark:text-gray-300">Верифицирован</TableHead>
-                                        <TableHead className="text-gray-700 dark:text-gray-300">Источник</TableHead>
+                                        {/* <TableHead className="text-gray-700 dark:text-gray-300">Верифицирован</TableHead> */}
+                                        {/* <TableHead className="text-gray-700 dark:text-gray-300">Источник</TableHead> */}
                                         <TableHead className="text-gray-700 dark:text-gray-300">Дата рег.</TableHead>
                                         <TableHead className="text-right text-gray-700 dark:text-gray-300">Действия</TableHead>
                                     </TableRow>
@@ -201,10 +201,10 @@ export function UserListClient({ users: initialUsersProp }: UserListClientProps)
                                                     {user.role}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell>
+                                            {/* <TableCell>
                                                 {user.verified ? <Badge variant="default">Да</Badge> : <Badge variant="outline">Нет</Badge>}
-                                            </TableCell>
-                                            <TableCell className="text-gray-800 dark:text-gray-200">{user.provider || 'Cred.'}</TableCell>
+                                            </TableCell> */}
+                                            {/* <TableCell className="text-gray-800 dark:text-gray-200">{user.provider || 'Cred.'}</TableCell> */}
                                             <TableCell className="text-gray-800 dark:text-gray-200">{formatDate(user.createdAt)}</TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditUser(user)}>
