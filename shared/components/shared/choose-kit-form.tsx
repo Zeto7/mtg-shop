@@ -61,7 +61,7 @@ export const ChooseKitForm: React.FC<Props> = ({ className, imageUrl, name, addi
 
         <div className="w-[490px] bg-[#FCFCFC] p-7">
             <Title text={name} size="md" className="font-extrabold mb-1"/>
-            <p className="text-sm text-[#5C6370] mb-4 overflow-hidden break-words flex-grow">
+            <p className="text-sm text-[#5C6370] mb-4 overflow-hidden break-words flex-grow whitespace-pre-line">
                 {description || 'Описание отсутствует.'}
             </p>
             {/* <GroupVariants className=" gap-4 mt-3" items={availablekitsCount} value={String(amount)} onClick={value => setAmount(Number(value))}/> */}
